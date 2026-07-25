@@ -8,18 +8,49 @@ disable-model-invocation: true
 
 显式调用本 Skill 后，当前 Agent 成为这项工作的主控，同时承担认知协作的状态判断。用户据此把当前目标范围内的执行拓扑交给主控；主控继续依据目标和现场事实决定下一步。
 
-
-
-## 身份与授权
+## 主控
 
 主控可以亲自执行，也可以使用现有 Thread、创建或分叉 Thread、派遣 Subagent，并负责等待、继续、整合和收束。该授权在本次工作中持续有效，不需要把每次工具选择重新交给用户；它不扩大破坏性操作、外部发布和目标范围的通常权限边界。
 
-主控对整体目标、任务之间的关系、结果整合和最终验收负责。主控通常保留为控制面，把会引入大量局部工具上下文与运行时注入的执行交给派生 Agent；它根据上下文影响与委派成本决定何时亲自处理，不把这一倾向固化为禁令。
+主控对用户意图、整体目标、任务关系、证据充分性、结果整合和最终验收负责，并保留这些判断所需的全局上下文。
 
 
-## 编排
+## Sidekick
 
-当工作需要通过派生 Agent 推进，或已有派生工作需要监督、整合与收束时，读取并遵循 [`references/orchestration.md`](references/orchestration.md)。
+主控默认维持一个以专用 Thread 为载体的长期 Sidekick，作为当前目标内反复使用的执行搭档。用户显式调用本 Skill，即表示用户请求并授权主控为当前目标建立和维护这个 Sidekick Thread。其生命周期从第一项适合委派的执行工作开始：若没有可复用的 Sidekick Thread，主控通过 `create_thread` 创建一个；已经存在时，通过 `send_message_to_thread` 继续使用原 Thread，延续已经形成的上下文。
+
+Sidekick Thread 创建时默认使用 `gpt-5.6-luna` 和 `xhigh`。主控根据后续工作的歧义、风险、验证难度和所需综合能力，通过 `send_message_to_thread` 为具体轮次选择足以可靠完成任务的模型与努力程度，并可在证据表明能力不足时调整。持续的是 Sidekick 的 Thread、职责和上下文，不是固定模型。
+
+Sidekick 承担会产生大量局部工具上下文的检索、文件阅读、日志分析、实现、测试和其他边界明确的执行；主控直接处理全局裁决、结果整合，以及委派成本高于上下文影响的窄幅工作。
+
+## 委派、等待与收回
+
+本节把承接某一委派分支的 Sidekick Thread、额外 Thread 或 Subagent 统称为**执行者**。Sidekick 是具有长期身份的特定执行者；其他 Thread 和 Subagent 不因此获得 Sidekick 身份。
+
+### 委派
+
+委派指的是派遣 subagent、创建新线程(thread、session)或类似行为，通常需要撰写给另一个 LLM 的提示词。
+它也遵循上述上下文归属原则，只提供另一个 LLM 无法可靠发现且会改变结果的信息：可验证目标、职责边界、相关路径、必要约束和验收证据。
+
+LLM 能够访问项目文档时，通过路径引用项目规则，不复制其内容；无法访问时，携带完成任务所需的最小必要上下文。
+
+模型能力和努力程度是两个独立的选择轴，默认使用 Luna Extra High。
+- 机械、边界明确且容易验证的任务可以使用 Luna，随着不确定性和复杂性，以及对模型的综合能力要求提高时，使用 Terra 乃至 Sol。
+- 努力程度根据步骤长度、推理深度和收敛难度选择，不由模型名称自动决定。
+- Sol Ultra 仅在用户明确指定时使用。
+- 
+**委派即转交该分支的执行循环。** 主控向执行者提供可验证目标、职责边界、相关路径、必要约束和返回证据。派遣后，为完成该目标所需的检索、文件阅读、日志分析、实现、测试和证据采集由执行者持有。只要主控准备采取的行动会替代或重复这些工作，就仍属于同一分支。
+
+执行者运行期间，主控等待结果、监督状态、回应用户，并编排目标或证据互不重叠的其他分支。主控依据已经返回的检查点作出方向判断，不在等待期间亲自进入同一分支。并行派遣其他 Agent 不改变已经转交的分支所有权。
+
+等待和状态检查按照执行者的载体选择：
+
+- Sidekick Thread 或额外 Thread：使用 `wait_threads` 等待，通过 `wait_threads` 的即时快照或 `list_threads` 查询状态；长时间没有可见进展时，通过 `send_message_to_thread` 请求它在下一个安全边界返回简短检查点。
+- Subagent：使用 `wait_agent` 等待，通过 `list_agents` 查询状态；长时间没有可见进展时，通过 `send_message` 请求它在下一个安全边界返回简短检查点。
+
+等待超时不是执行者状态，不能据此推断分支归属。主控查询实际状态，并依据返回结果、检查点和当前方向决定继续等待、重新派遣、调整或收回。只要状态表明执行者仍在正常运行，该任务就继续由它持有，主控应该优先等待其结果。
+
+当任务结构需要时，主控同时增加并行 Agent 或额外 Thread。读取并遵循 [`references/orchestration.md`](references/orchestration.md)。这些扩展执行者不承担 Sidekick 身份。
 
 
 ## 专门工作流
@@ -38,4 +69,4 @@ disable-model-invocation: true
 个人 Wiki 位于 `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/wiki`，是用户认知结构的外部表示。
 只有进入认知协作状态才访问 Wiki。首次进入时先读取其 `AGENTS.md`；相关 Model、未归属认知债和其他内容只按当前知识检验、比较或写回所需的范围读取。
 
-进入认知协作状态后，读取并遵循 [`references/cognitive-collaboration.md`].
+进入认知协作状态后，读取并遵循 [`references/cognitive-collaboration.md`](references/cognitive-collaboration.md)。
