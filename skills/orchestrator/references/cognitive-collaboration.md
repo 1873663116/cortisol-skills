@@ -23,7 +23,7 @@ Ledger 在过于巨大、繁杂时进行合并性压缩重构。
 
 ## 派生考核
 
-在准备实现、阶段结束或 Thread 结束时，或用户主动要求考核时，若 Ledger 中存在值得检验的材料或 Cognitive Debt，使用 `fork_thread` 从当前 Thread 分叉一个认知考核 Thread，让项目主 Thread 继续执行。派生时标记当前 Ledger 为该分支独占的 Checkpoint；源 Thread 停止写入它，之后只有再次进入认知协作状态时才惰性创建新 Ledger。
+在准备实现、阶段结束或 Thread 结束时，或用户主动要求考核时，若 Ledger 中存在值得检验的材料或 Cognitive Debt，使用 `fork_thread` 从当前 Thread 分叉一个认知考核 Thread，让项目主 Thread 继续执行。派生时标记当前 Ledger 为认知考核 Thread 独占的 Checkpoint；项目主 Thread 停止写入它，之后只有再次进入认知协作状态时才惰性创建新 Ledger。
 
 考核 Thread 不允许创建 Ledger。
 
