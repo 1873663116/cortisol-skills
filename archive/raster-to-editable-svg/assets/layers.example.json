@@ -1,0 +1,16 @@
+{
+  "layers": [
+    {
+      "name": "foreground",
+      "samples": [[256, 256]],
+      "roi": [0, 0, 512, 512],
+      "lab_tolerance": 20,
+      "uncertainty_width": 4,
+      "open_radius": 1,
+      "close_radius": 1,
+      "include_polygons": [],
+      "exclude_polygons": [],
+      "unknown_polygons": []
+    }
+  ]
+}
