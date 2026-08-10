@@ -1,0 +1,5 @@
+repo    https://github.com/cursor/plugins
+path    pstack
+commit  195d9359bdc2890f83745df69927528ad4538406
+version 0.14.0
+date    2026-08-07

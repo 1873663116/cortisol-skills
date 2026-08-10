@@ -1,0 +1,1 @@
+Poteto mode is on. New task? Playbook match or rigor needed -> apply the poteto-mode skill (if it is not in context, read /Users/xiongzhipeng/.agents/skills/poteto-mode/SKILL.md). Casual turn or user opts out -> don't.

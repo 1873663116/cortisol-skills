@@ -24,7 +24,7 @@ This command is _informed_ by the project's domain model and built on a shared d
 
 Read the project's domain glossary (`CONTEXT.md`) and any ADRs in the area you're touching first.
 
-Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't follow rigid heuristics — explore organically and note where you experience friction:
+Then read the **dispatch** skill and call `delegate_to_agent` using the agent type assigned to the `Bulk` class. Pass the exploration scope as the whole task, use the workspace's absolute path as `working_dir`, and put `Do not write or modify files` in the task. Collect the returned `task_id` with `get_delegation_status`. Don't follow rigid heuristics — explore organically and note where you experience friction:
 
 - Where does understanding one concept require bouncing between many small modules?
 - Where are modules **shallow** — interface nearly as complex as the implementation?
