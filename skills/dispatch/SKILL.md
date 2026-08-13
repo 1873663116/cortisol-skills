@@ -18,6 +18,10 @@ Every delegate goes through the codeg MCP tool `delegate_to_agent`, except where
 
 **Cold start.** The delegate sees nothing of your conversation. Pass the whole prompt as `task`, use an absolute `working_dir`, and point at files instead of inlining contents.
 
+**Cite or state, never both.** Point at a skill and let it carry its rules, or spell the rules out and drop the pointer. Restating what the pointer already carries makes the delegate read the same requirement twice and is the commonest way a task prompt bloats.
+
+**One level.** End every task with `Own this work end to end; you are the last agent on it.` A delegate that builds its own review panel doubles wall time and hands back verdicts you cannot audit; review is yours.
+
 **No resume on this primitive.** One task, one result. A correction is a fresh dispatch carrying the consolidated scope. The sidekick lane below resumes, on a different primitive.
 
 **No read-only mode.** When a delegate must not write, put `Do not write or modify files` in its task.
@@ -51,7 +55,7 @@ Run `npx -y quota-axi` when the choice turns on headroom you have not actually s
 
 **Judgment and Letter-precise are capability constraints, budget does not move them.** Judgment goes to `claude_code`, letter-precise to `codex`. Serial Judgment from a Claude Code orchestrator takes the sidekick lane instead of repeated cold delegates. If the constrained agent has no headroom, the honest move is to say so and let the user decide, not to quietly substitute a weaker agent and hand back work that looks finished.
 
-**Judgment and Letter-precise delegates carry the style.** Their task prompt starts with: `Read /Users/xiongzhipeng/.agents/skills/poteto-mode/SKILL.md in full before any work, and read the principle files it names as they become relevant to your task.` Upstream enforced this through a dedicated `poteto-agent` subagent type; a line in the prompt is the local equivalent, and skipping it is how delegate output drifts off style. Bulk delegates skip it, the read costs more than trivial work is worth. Panel reviewers skip it too, they run their own reviewer prompts.
+**Carry the style where the delegate still has calls to make.** Judgment delegates decide what you have not decided, so their prompt starts with: `Read /Users/xiongzhipeng/.agents/skills/poteto-mode/SKILL.md in full before any work, and read the principle files it names as they become relevant to your task.` Skipping it there is how delegate output drifts off style. Letter-precise work is a sequence you already specified, so the tree's playbooks, routing and reply rules never fire; name instead the leaf skills that govern the artifact it produces, usually `../no-comments/SKILL.md` and whichever principle files your task leans on. Bulk and Panel carry neither: trivial work is not worth the read, and reviewers run their own prompts.
 
 **Bulk is a budget decision.** Read the numbers, then apply the reasoning below. Split it first by whether latency matters. A wide fan-out wants fast agents and the headroom that expires soonest. One long errand nobody is waiting on wants the opposite: the deepest pool, speed irrelevant. When `grok` and `cursor` are both out of headroom or otherwise unavailable, `open_code` is Bulk's standing fallback.
 
