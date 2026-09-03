@@ -1,22 +1,22 @@
 ---
 name: principle-migrate-callers-then-delete-legacy-apis
-description: "Apply when introducing a new internal API while old callers still exist. Migrate callers and delete the old API in the same wave instead of preserving compatibility layers."
+description: "引入新的内部 API 且旧调用方仍然存在时使用。在同一轮改动中一次性完成所有调用方的迁移并彻底下线旧 API，严禁保留长期兼容过渡层。"
 disable-model-invocation: true
 ---
 
-# Migrate Callers Then Delete Legacy APIs
+# 先迁移调用方再删除遗留 API（Migrate Callers Then Delete Legacy APIs）
 
-When we decide a new API is the right design, migrate callers and remove the old API in the same refactor wave instead of preserving compatibility layers.
+当我们确立了新的 API 设计为最优解时，必须在同一轮重构中同步迁移所有调用方并彻底物理移除旧 API，严禁遗留长期存在的双轨兼容层。
 
-**Rule:**
-- Do not keep legacy API paths alive only because internal callers still exist
-- Inventory callers, migrate them, and delete the old API immediately
-- Treat temporary adapters as exceptional and time-boxed, not default architecture
-- Update tests to assert the new contract, and delete tests that only protect pre-refactor implementation details
+**核心规则：**
+- 严禁仅仅因为内部尚有旧调用方残留，就任由废弃的 API 路径继续苟延残喘。
+- 全面清点所有内部调用方，一次性统一迁移，随后立即物理删除旧 API 定义。
+- 临时兼容适配器仅在极少数特殊过渡期允许短暂存在，必须附带明确的下线时限，绝不能将其作为默认架构模式。
+- 同步更新测试用例以断言全新的接口契约，坚决删除那些仅用于保护重构前内部实现细节的陈旧测试。
 
-**When this applies:**
-- No external users depend on backward compatibility
-- The project can absorb coordinated breaking changes
-- The new API is part of a simplification or refactor initiative
+**适用场景前提：**
+- 无外部第三方使用者依赖向后兼容性（属于内部模块间契约）。
+- 当前代码库与发布流程能够承受一次协同一致的破坏性变更（Breaking change）。
+- 新 API 属于系统架构简化或深度重构战役的一部分。
 
-Keeping both old and new APIs creates dual-path complexity, slows cleanup, and makes the codebase feel append-only.
+同时保留新旧两套 API 会导致系统复杂度成倍膨胀，严重拖慢后续清理进度，并使代码库陷入“只增不减、债务堆积”的恶性循环。

@@ -1,21 +1,21 @@
 ---
 name: principle-foundational-thinking
-description: "Apply before writing logic: choosing core types and data structures, sequencing scaffold-vs-feature work, asking what concurrent actors share. Get the data structures right so downstream code becomes obvious."
+description: "编写业务逻辑前必须理清：核心强类型与基础数据结构定义、基础设施脚手架与具体功能的先后顺序、并发执行者之间的状态共享边界。把核心数据结构定义正确，下游业务逻辑自然水到渠成。"
 disable-model-invocation: true
 ---
 
 # Foundational Thinking
 
-**Structural decisions** protect option value. **Code-level decisions** protect simplicity. Over-engineering is often a premature decision that closes doors. The right foundational data structure keeps doors open.
+**顶层结构性决策**保护的是系统未来的演进选择权；**微观代码层决策**保护的是系统实现的极致简约性。过度设计往往源自于过早做出了缺乏回旋余地的死板决策，并由此彻底关上了架构演进的大门；而正确的基础数据结构能够让这扇门始终保持敞开。
 
-**Data structures first.** Get the data shape right before writing logic. The right shape makes downstream code obvious. Define core types early, trace every access pattern, and choose structures that match the dominant paths. A data-structure change late is a rewrite. Early, it is often a one-line diff.
+**数据结构优先。** 在编写任何具体业务逻辑之前，必须先把核心数据形态定义正确。精准契合业务形态的数据结构，会让下游的代码实现变得水到渠成、不言自明。尽早确立核心强类型定义，细致梳理每一种数据访问模式，选择与核心高频路径完美匹配的专用结构。数据结构的重大变更若推迟到开发后期往往意味着整套代码的推倒重写；而放在初期阶段，通常仅仅是一行极小的类型 diff。
 
-At code level, DRY the structure, not every line. Types and data models should converge. Three similar statements still beat a premature abstraction. Prefer explicit over clever. Test behavior and edge cases, not line counts.
+在代码实现层面，对系统结构坚持 DRY（Don't Repeat Yourself），而非对每一行琐碎代码机械去重。核心强类型与领域数据模型必须高度内聚收敛；三行逻辑相似但语义不同的直白语句，远胜于一个过早引入、晦涩难懂的错误抽象。直白显式表达严格优于自作聪明的技巧。面向真实业务行为与极端边界编写测试，而非盲目追求虚浮的测试覆盖率行数。
 
-**Concurrency corollary.** Before sharing state between actors, ask "what happens if another actor modifies this concurrently?" If not "nothing", isolate.
+**并发设计推论。** 在多个并发执行者之间引入状态共享前，首先深刻自问：“若另一个执行者此刻正在并发篡改该状态，会发生什么严重后果？”若答案不是“完全无影响且安全”，则必须在架构层面执行彻底的物理隔离。
 
-**Scaffold first.** If something helps every later phase, do it first. Ask "does every subsequent phase benefit from this existing?" CI, linting, test infrastructure, and shared types are scaffold. Sequence for option value: setup before features, tests before fixes. Keep commits small and single-purpose.
+**基础设施脚手架优先。** 若某项工作能够为后续各个执行阶段提供全局赋能，必须将其作为最高优先级率先落地。自问：“后续的每一个阶段是否都会因为这项基础设施的提前就位而显著受益？”CI 流水线、Lint 规则、自动化测试工装以及共享核心类型均属于关键脚手架。以最大限度保留架构选择权的方式安排交付顺序：先搭脚手架再写业务功能，先写失败测试再实施精准修复。保持每次提交小巧且职责单一。
 
-Each increment should land a coherent abstraction or deepen one that exists. Do not spread a new capability across callers as special-case coordination.
+每一次功能增量都应当沉淀为一个自洽的高内聚抽象，或进一步深化现有的清晰抽象。坚决禁止将新能力作为散落各处的特例临时协调逻辑随意扩散到各个调用方中。
 
-Subtraction comes before scaffolding: remove dead weight first, then lay foundations.
+在搭建脚手架之前必须先做减法：先彻底清除历史死重，再夯实系统地基。

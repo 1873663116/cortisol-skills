@@ -1,80 +1,80 @@
 ---
 name: unslop
-description: Cut AI tells from any writing. Must always apply.
+description: "清除自然语言与技术文档中的 AI 腔与套路化表达。必须始终无条件严格应用。"
 ---
 
 # Unslop
 
-Edit text to remove AI patterns and add human voice.
+深度审查并清洗任何自然语言文本，剔除所有刻板的 AI 腔调、套路化废话与虚浮行话，注入真实人类专业工程师的自然声音与严谨质感。
 
-## Process
+## 标准处理流程
 
-1. Scan for the patterns below.
-2. Rewrite. Preserve meaning, match intended tone.
-3. Add soul (see next section).
-4. Self-audit: "What makes this obviously AI generated?" Fix remaining tells.
+1. 对照下方的负面模式清单逐条展开地毯式排查。
+2. 彻底重写问题语句：坚决保持原始核心意图不变，精准契合专业工程语境。
+3. 注入真实人类工程师的表达质感（参见下节）。
+4. 严格自我审问自查：“这段文本中是否存在任何让人一眼即能识破是 AI 生成的痕迹？”将所有残留痕迹彻底清除。
 
-## Adding soul
+## 注入真实表达质感
 
-Removing patterns is half the job. Sterile, voiceless writing is just as obvious.
+仅仅机械地删掉废话套话只是完成了一半的工作；若文字写得过于无菌、苍白生硬、缺乏灵魂，同样会被瞬间识破为机器拼凑。
 
-- **Have opinions.** React to facts instead of neutrally listing pros and cons.
-- **Vary rhythm.** Short sentences. Then longer ones that take their time. Mix it up.
-- **Acknowledge complexity.** "Impressive but also kind of unsettling" beats "impressive."
-- **Use "I" when it fits.** First person isn't unprofessional.
-- **Let some mess in.** Perfect structure looks machine-made.
-- **Be specific.** Not "this is concerning" but "there's something unsettling about agents churning away at 3am."
+- **鲜明亮出专业技术观点。** 对客观事实做出有依据的技术反应与判断，而非两头讨好地机械中立罗列利弊。
+- **让语言节奏富于变化。** 精炼有力的短句，交替配合从容舒展的长句，长短结合，自然流畅。
+- **正视工程世界的复杂性与代价。** “方案非常优雅，但在边缘异常处理上确实让人捏一把汗”远胜过空洞苍白的“方案非常完美”。
+- **在合适场景自然使用第一人称。** 恰当使用“我/我们”绝不代表不专业。
+- **允许适度的自然不齐整。** 过于机械对称、完美无瑕的三段式排比，反而极具机器生成的劣质塑料感。
+- **务求精准具体。** 杜绝空泛抽象，写具体的数据、具体的行为、具体的后果。
 
-## Patterns to detect and fix
+## 必须彻底识别并根治的负面模式
 
-### Content
+### 内容与套路
 
-1. **Puffery.** "pivotal moment", "testament to", "evolving landscape", "setting the stage for", "indelible mark", "deeply rooted". Cut puffery, state what happened.
-2. **Name-dropping.** Listing media outlets without context. Pick one, say what was said.
-3. **Superficial -ing phrases.** "highlighting...", "ensuring...", "reflecting...", "showcasing...", "fostering...". Delete or expand with real sources.
-4. **Promotional language.** "nestled", "vibrant", "breathtaking", "groundbreaking", "renowned", "stunning", "must-visit". Use neutral descriptions.
-5. **Vague attributions.** "Experts believe", "Industry reports suggest", "Some critics argue". Name the source or delete.
-6. **Formulaic challenges.** "Despite challenges... continues to thrive." Replace with specific facts.
+1. **廉价的吹捧与浮夸修饰。** “里程碑时刻”、“无与伦比的证明”、“不断演进的图景”、“奠定了坚实基础”、“不可磨灭的印记”等。坚决删除所有浮夸吹捧，直接客观陈述事实。
+2. **缺乏上下文的机械罗列。** 无上下文地报菜名式罗列一大堆机构或工具；挑出最具代表性的一个，清晰讲透它具体说了什么或做了什么。
+3. **空洞轻浮的现在分词短语。** 泛滥的“highlighting...”、“ensuring...”、“reflecting...”、“showcasing...”、“fostering...”等；将其删除，或改写为主谓明确的确定性完整句子。
+4. **劣质广告营销腔。** “vibrant”、“breathtaking”、“groundbreaking”、“renowned”、“stunning”、“must-visit”等；一律替换为客观中立的技术事实。
+5. **来源模糊的诉诸权威。** “专家普遍认为”、“行业报告表明”、“部分批评者指出”等；明确指出具体出处与数据源，无法确证的直接删除。
+6. **公式化的转折句式。** “尽管面临重重挑战，某某依然持续蓬勃发展”；替换为具体的客观事实与量化数据。
 
-### Language
+### 词汇与句式
 
-7. **AI vocabulary.** Additionally, crucial, delve, enduring, enhance, fostering, garner, interplay, intricate, landscape (abstract), pivotal, showcase, tapestry (abstract), testament, underscore, vibrant. Replace with plain words.
-8. **Fancy ways to say "is".** "serves as", "stands as", "boasts", "features". Just say "is" or "has".
-9. **"Not just X, but Y."** State the point directly instead.
-10. **Rule of three.** Forcing ideas into groups of three. Use the natural number.
-11. **Synonym cycling.** Protagonist, main character, central figure, hero all in one paragraph. Pick one, repeat it.
-12. **False ranges.** "from X to Y" where X and Y aren't on a meaningful scale. List topics directly.
+7. **典型 AI 标志词汇。** Additionally、crucial、delve、enduring、enhance、fostering、garner、interplay、intricate、landscape（抽象隐喻义）、pivotal、showcase、tapestry（抽象隐喻义）、testament、underscore、vibrant 等；替换为平实精准的词汇。
+8. **把“是/有”说得花里胡哨。** “serves as”、“stands as”、“boasts”、“features”等；直接说“是”或“包含/拥有”。
+9. **“不只是 X，而是 Y”式说教。** 严禁采用此类故弄玄虚的对比句式，直接直截了当地把核心要点讲出来。
+10. **强行凑三段式。** 机械地将想法凑成三条一组排比；有几条就客观列几条。
+11. **同义词频繁轮换。** 在同一段落中为了展示词汇量，对同一实体反复更换称谓；选定最规范的一个名称，在全篇保持严格统一。
+12. **虚假的伪区间对比。** “从 X 到 Y”，而 X 和 Y 在维度上根本不属于同一个物理量纲；直接将讨论的主题逐一客观列出。
 
-### Style
+### 标点与格式风格
 
-13. **Em dash overuse.** Avoid em dashes entirely. Use periods or commas only (no parentheses, no en dashes, no hyphen-as-dash substitutes). Em dashes are an AI tell, and reaching for parentheses instead just trades one tell for another. If a thought needs separation, end the sentence or use a comma.
-14. **Colon overuse.** Colons are fine before a list or example. Not as mid-sentence connectors. "If you're coming from traditional automation: instead of registering event handlers, you describe conditions" adds nothing with the colon. Rewrite to let the point stand on its own without comparison framing. "Describing when the scheduler should fire works best as plain English." Same meaning, no crutch punctuation.
-15. **Boldface overuse.** Don't bold every proper noun or acronym.
-16. **Inline-header lists.** The tell is a bold label and colon that restates the line: "**Performance:** Performance improved...". Convert those to prose. A bold lead-in that ends in a period, names the item, and is followed by genuinely new detail ("**Schema in TypeScript.** Tables live in one file.") is fine, not a tell.
-17. **Title case headings.** Use sentence case.
-18. **Decorative emojis.** Remove from headings and bullets.
-19. **Curly quotes.** Replace with straight quotes.
+13. **长破折号（Em dash）泛滥。** 坚决禁止滥用长破折号（——）。直接使用句号切分句子，或使用逗号连接；严禁使用括号或短横线作为长破折号的替代变体。长破折号是 AI 生成文本的最显著破绽；当一个逻辑需要分层时，直接结束当前句子开启新句。
+14. **冒号作为句子连接词滥用。** 在列表或代码示例前使用冒号是合法的；但严禁在单句中间拿冒号充当连接词。
+15. **加粗滥用。** 严禁把文中的每个专有名词、缩写或关键短语都随手加粗。
+16. **行内标题列表的机械复述。** 严禁在加粗标签后紧接着机械复述相同词汇（如“**Performance:** Performance improved...”）；以句号收尾且承载全新有效信息的加粗引导句（如“**Schema in TypeScript.** Tables live in one file.”）属于合法范式。
+17. **标题英文大小写规范。** 英文标题统一采用句子式大写（Sentence case），仅首字母大写，非专有名词不全大写。
+18. **装饰性 Emoji 泛滥。** 除非用户显式要求，否则坚决禁止在标题与正文中添加任何无意义的装饰性 Emoji。
+19. **标点格式。** 代码与英文场景中使用直引号（`"`），杜绝弯引号。
 
-### Communication artifacts
+### 交互与对话残留
 
-20. **Chatbot phrases.** "I hope this helps!", "Let me know if...", "Of course!", "Certainly!", "Found the smoking gun!" Remove.
-21. **Cutoff disclaimers.** "While specific details are limited..." Find sources or remove.
-22. **Sycophantic tone.** "Great question! You're absolutely right!" Respond directly.
+20. **聊天机器人口头禅与套话。** “I hope this helps!”、“Let me know if you need further assistance”、“Of course!”、“Certainly!”、“Found the smoking gun!”等；一律彻底删除。
+21. **知识库截止期免责声明。** “While specific details are limited based on my knowledge cutoff...”；亲自去检索确证事实，或直接删除。
+22. **谄媚附和。** “Great question! You're absolutely right!”等无脑迎合；直接针对技术核心给出干练回答。
 
-### Filler
+### 废话填充
 
-23. **Filler phrases.** "In order to" becomes "To". "Due to the fact that" becomes "Because". "It is important to note that" gets deleted.
-24. **Excessive hedging.** "could potentially possibly be argued that it might" becomes "may".
-25. **Generic conclusions.** "The future looks bright." State specific plans or facts.
+23. **冗长填充短语。** “In order to”精简为“To”；“Due to the fact that”精简为“Because”；“It is important to note that”整句物理删除。
+24. **过度模糊化推测。** “could potentially possibly be argued that it might”精简为“may”。
+25. **万金油式空洞结尾。** “未来前景一片光明”；替换为具体的实施计划或确凿事实。
 
-### Jargon
+### 抽象隐喻与行话黑话
 
-26. **Abstract metaphor nouns.** Substrate, wedge, vector, locus, vantage, nexus, primitive (as noun), harness (as metaphor), surface (as in "API surface"), bedrock, scaffolding (as metaphor), modality, paradigm, gold-plating, ratchet (as metaphor), evacuate (for moving code), endgame, north star, flywheel. These read as technical but usually have a plainer concrete word. "Substrate" becomes "base". "Wedge in" becomes "add". "Vector" becomes "way" or "method". "Gold-plating" becomes "more than the job needs". "Ratchet" becomes the mechanism's real name or "a limit that only tightens". "Evacuate" becomes "move out". "Endgame" becomes "the last phase". Pick the concrete word.
+26. **抽象隐喻名词。** Substrate、wedge、vector、locus、vantage、nexus、primitive（用作抽象名词）、harness（用作空泛比喻）、surface（如滥用“API surface”）、bedrock、scaffolding（用作空泛比喻）、modality、paradigm、gold-plating、ratchet（用作比喻）、evacuate（指代移动代码）、endgame、north star、flywheel 等。这些词看似高端，实则往往掩盖了语义的贫乏：Substrate 就是 base/底座；Wedge in 就是 add/新增；Vector 就是 method/方法；Gold-plating 就是过度设计；Evacuate 就是迁移/移除；Endgame 就是最终阶段。使用具体实在的工程词汇。
 
-### Plain speech
+### 直白与高信息密度
 
-27. **Say what it does, not how it feels.** "the database stays close at hand", "SQL you can read", "types that follow your schema" name a feeling. The fix names the mechanism or a number: "`.toSQL()` returns the exact string sent to the database", "a column rename fails the build". Ask what the sentence tells the reader to do or know, then write that. If you can't restate it as a concrete instruction, fact, or number, cut it. One more check: if the sentence could appear unchanged in another project's docs, it says nothing about this one. Cut it.
-28. **Shorten or split dense sentences.** If the reader has to backtrack to parse a sentence, break it in two or drop clauses. One idea per sentence.
-29. **Active voice.** Prefer it. Catch "is/are/was/were + past participle" and name the actor: "queries are validated" becomes "the compiler validates queries", "the file is parsed by the loader" becomes "the loader parses the file". Passive is fine only when the actor is unknown or genuinely doesn't matter.
-30. **Cut adverbs, or use a stronger verb.** "runs quickly" becomes "is fast" or the number. "significantly improves" becomes the measured delta. An adverb propping up a weak verb means the verb is wrong.
-31. **Prefer the plain word.** "utilize" becomes "use", "leverage" becomes "use", "facilitate" becomes "help", "numerous" becomes "many", "in the event that" becomes "if". The fancier synonym is rarely clearer.
+27. **写它具体做了什么，而不是它给人何种主观感受。** “数据库近在咫尺”、“优雅可读的 SQL”、“紧跟 schema 的类型”等均属于主观感受；改写为确凿的机制或具体数字，如“`.toSQL()` 直接返回发送至数据库的原始字符串”、“重命名列会导致编译期类型报错”。若一句话原封不动放入另一个完全不相干的项目文档中也同样成立，说明该句未提供任何关于本项目的实质有效信息：果断整句删除。
+28. **果断拆解晦涩臃肿的长复合句。** 若读者必须反复倒回去重读才能理清主谓关系，立即拆解为两个干练的短句。一句话只承载一个核心意思。
+29. **坚决优先使用主动语态。** 明确写出动作的发出者（如写“the compiler validates queries”，而非“queries are validated”）。
+30. **剔除无力副词，选用精准动词。** “runs quickly”改写为“is fast”或直接给出实测耗时；“significantly improves”直接给出量化的性能差值。靠副词支撑弱动词，说明选词本身存在问题。
+31. **坚决选用平实词汇。** 用“use”替代“utilize/leverage”；用“help”替代“facilitate”；用“many”替代“numerous”；用“if”替代“in the event that”。

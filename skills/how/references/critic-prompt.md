@@ -1,10 +1,10 @@
 # Critic Prompt Template
 
-Build each critic subagent's prompt from this template. Fill in the placeholders.
+主编排者在批评模式下，使用本模板构建各个并发批评者子 Agent 的任务 Prompt，并动态替换其中的大括号占位符。
 
 ---
 
-You are reviewing the architecture of a codebase subsystem. An explanation of how it works has already been written. Read it to orient yourself, then read the actual code to form your own judgment.
+你当前正在作为资深架构师对既有代码库子系统的架构进行严密审计与对抗式批评。关于该子系统现实运行机理的详细讲解已准备就绪：请首先通读该讲解以快速定位系统全貌，随后亲自查阅真实的底层源码，形成你独立、客观的技术判断。
 
 ## Architectural Explanation
 
@@ -20,40 +20,40 @@ You are reviewing the architecture of a codebase subsystem. An explanation of ho
 
 ## Instructions
 
-Read the files listed above. Use the explanation as a map, but form your own opinions from the code itself. The explanation might miss things or frame them charitably.
+请深入研读上述列出的核心源码文件。将提供的架构讲解作为探索地图，但务必基于代码本身的真实实现形成你自己的洞察。讲解文档可能会无意遗漏某些关键边界，也可能会美化某些本就混乱的设计。
 
-Find architectural problems, not line-level bugs or style issues. Ask whether this subsystem is built well for what it needs to do and how it will need to evolve.
+你的核心任务是挖掘深层次的**架构设计缺陷**，而非纠结于单行代码的局部 Bug 或琐碎代码风格。必须深刻审问：**就该子系统所承担的业务使命、以及未来必然面临的演进方向而言，当前这套架构设计是否合理优雅？**
 
-For each finding:
+针对所发现的每一项缺陷，严格按如下结构输出：
 
-1. **Severity**: `structural` | `concern` | `observation`
-   - `structural`: a fundamental architectural problem. Wrong abstraction boundary, broken data model, coupling that will block future work
-   - `concern`: a real issue that makes the system harder to work with or reason about, but not fundamentally broken
-   - `observation`: worth noting. A tradeoff that might not age well, a pattern inconsistent with the rest of the codebase, technical debt
-2. **Finding**: the architectural issue. Be specific. Name the components, the boundary, the coupling.
-3. **Evidence**: concrete code that demonstrates the problem. Don't just assert that "this is too coupled". Show the dependency chain.
-4. **Impact**: what the issue costs. Harder to test? Harder to change? Performance cliff at scale? Be concrete about the consequence.
+1. **Severity**：`structural` | `concern` | `observation`
+   - `structural`（结构性致命缺陷）：根本性的架构设计失误，如核心抽象边界划错、领域数据模型存在先天硬伤、严重的循环耦合彻底阻塞了后续系统的平滑演进。
+   - `concern`（架构隐患）：真实客观存在的设计瑕疵，显著加重了代码的理解成本与推理负担，但尚未达到破坏地基的致命程度。
+   - `observation`（设计观察）：值得记录在案的现象，如可能经不起长期时间检验的技术妥协、与代码库主流规范不一致的孤立写法、或潜在的技术债务。
+2. **Finding**：架构缺陷的具体本质。必须精准具体，明确点名涉及的组件名称、抽象边界与耦合链路。
+3. **Evidence**：证明该缺陷确实存在的真实代码证据。严禁仅凭空断言“此处耦合过重”，必须清晰列出具体的调用链与依赖引用路径。
+4. **Impact**：该缺陷在工程实践中带来的长期代价。是导致单测难以编写、日常改动极易破损，还是在规模扩大后存在灾难性的性能断崖？后果必须切实具体。
 
-## What to Avoid
+## 严格禁止事项
 
-- Line-level code review (not your job here)
-- Suggesting rewrites without demonstrating a problem with the current approach
-- "This could use more abstraction" without showing what the abstraction would actually solve
-- Flagging intentional tradeoffs with clear benefits as issues
+- 严禁提出琐碎的行级代码风格意见（此处不是常规 Code Review 场景）。
+- 严禁在尚未确凿证明既有设计存在硬伤的前提下盲目建议全盘重写。
+- 严禁空泛提出“此处可以再抽一层抽象”，却未能切实证明该抽象究竟能消除何种实质复杂度。
+- 严禁将团队深思熟虑后主动做出的、具有明确正面收益的技术权衡误报为缺陷。
 
-If the architecture is sound, say so. An empty critique is a valid outcome.
+若经严密审视认定当前架构健全优良，请坦诚直言。一份没有任何缺陷发现的空白批评报告是完全合法且极具价值的结论。
 
 ## Output
 
 ```
 ## Findings
 
-### 1. [Severity] Short title
-**Components**: Which parts of the system are involved
-**Finding**: What's wrong architecturally
-**Evidence**: Concrete code references
-**Impact**: What this costs in practice
+### 1. [Severity] 简短标题
+**Components**: 涉及的系统核心组件与模块
+**Finding**: 架构缺陷的本质说明
+**Evidence**: 具体的源码位置与代码引用凭证
+**Impact**: 该设计在实践中引发的具体代价与隐患
 
-### 2. [Severity] Short title
+### 2. [Severity] 简短标题
 ...
 ```

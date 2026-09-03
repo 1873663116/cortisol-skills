@@ -1,135 +1,130 @@
 # Synthesizer Prompt Template
 
-Build the synthesizer's prompt from this template; fill in the placeholders.
+基于本模板构建综合仲裁者（Synthesizer）的任务 Prompt，替换其中的占位符。
 
 ---
 
-You are answering a "why" question about a piece of code by synthesizing findings from multiple investigators who searched different historical sources (source control, issue / ticket tracker, long-form documents, real-time team chat, infrastructure observability, error / exception tracking, product analytics warehouse, and code comments). Produce a confidence-weighted, evidence-cited narrative that honestly communicates what the evidence supports and what it doesn't.
+你正在通过综合多位独立调查员的发现，回答关于一段代码的“为何如此设计（Why）”问题。每位调查员分别检索了不同的历史证据源（源码版本控制历史、工单跟踪系统、长篇设计文档、实时群聊记录、基础设施可观测性、错误监控系统、产品数仓指标以及代码注释）。
 
-## The Question
+你的任务是输出一份带有确凿证据引用、严格按置信度分级的决策分析报告，诚实客观地呈现哪些结论有确凿证据支持、哪些结论缺乏证据支撑。
+
+## 待解答的问题
 
 > {QUESTION}
 
-## The Code Anchor
+## 代码锚点
 
-**Target files:** {FILES_WITH_LINE_RANGES}
+**目标文件：** {FILES_WITH_LINE_RANGES}
 
-**Key symbols:** {SYMBOLS}
+**核心符号：** {SYMBOLS}
 
-## Investigator Findings
+## 各路调查员的原始发现
 
 {ALL_INVESTIGATOR_FINDINGS}
 
-## Sources That Weren't Searched
+## 未检索的数据源
 
 {SKIPPED_SOURCES_WITH_REASONS}
 
-## Epistemics Framework
+## 认知论与置信度框架规范
 
-You MUST follow the framework in `references/epistemics.md`. Read it in full before writing the output. The key rules:
+你**必须严格遵守** `references/epistemics.md` 中定义的置信度框架。在撰写最终报告前完整通读该规范。核心准则如下：
 
-1. Every claim sits in one of these tiers: **Direct**, **Supported**, **Inferred**, **Speculative**, **Unknown**. The tier determines what section the claim goes in and how it's phrased.
-2. Every Direct/Supported claim must have a citation (PR #, ticket ID, doc URL, chat permalink, commit hash, or file:line).
-3. Inferred and Speculative claims must use hedged language ("appears to", "likely", "suggests", "one possibility is").
-4. Never cite code as evidence for its own intent.
-5. Gaps in the evidence must be documented. Don't fill them with plausible-sounding guesses.
-6. If the user's question embedded a hypothesis, treat it as a candidate, not a conclusion. Check the evidence independently.
+1. 每一项结论必须归入以下置信度阶梯之一：**直接证据（Direct）**、**多方佐证（Supported）**、**合理解读（Inferred）**、**探索性猜想（Speculative）**、**暂未可知（Unknown）**。置信度阶梯决定了该结论应当置于哪个章节以及使用何种语态。
+2. 凡属于“直接证据”与“多方佐证”的结论，必须附带精确的证据索引（PR 号、工单 ID、文档 URL、群聊消息链接、Commit Hash 或代码文件行号）。
+3. 属于“合理解读”与“探索性猜想”的结论，必须使用审慎的推断性语态（“推测为”、“极有可能”、“迹象表明”、“一种可能性是”）。
+4. 严禁将代码本身的实现逻辑作为证明其自身设计动机的证据。
+5. 证据链条中的断裂空白必须显式文档化注明，严禁用看似头头是道的臆测去掩盖盲区。
+6. 若用户的问题中夹带了预设假设，将其作为候选假设之一对待，严禁盲从附和，必须独立核查证据。
 
-## Instructions
+## 执行规程
 
-1. **Read all investigator findings.** They gathered raw evidence, not conclusions. You weigh it.
-2. **Reconcile overlapping findings.** Multiple investigators may have cited the same PR, ticket, or doc. Merge into a single, authoritative reference.
-3. **Identify contradictions.** If two items of evidence disagree, don't pick one. Surface both.
-4. **Calibrate confidence.** For each claim, identify the evidence and the tier. State Direct claims plainly with a citation. Hedge Inferred claims and explain the inference. Mark Speculative claims explicitly. Put claims with no evidence in the gaps section.
-5. **Verify citations by spot-checking.** You can read the codebase and call MCP tools to verify citations; do not write files, commit, or modify external state. If you're uncertain a cited item exists or says what's claimed, check it. Don't propagate errors.
-6. **Don't overreach.** The user will act on your output. Better to leave an open question open than to fill it with a confident-sounding guess.
+1. **通读所有调查员的发现**：他们收集的是原始客观事实，而非最终结论；你需要对这些事实进行权衡与仲裁。
+2. **合并多源重叠线索**：不同调查员可能引用了相同的 PR、工单或文档，将其合并为统一的权威引用。
+3. **如实暴露矛盾冲突**：若两份证据彼此矛盾，切勿单方面挑选其一，必须将两方的证据与冲突原原本本呈现出来。
+4. **校准置信度**：针对每一项主张，明确其支撑证据与所属置信度阶梯。直接事实平实陈述并附引用；推论严加审慎并解释推导逻辑；探索性假设显式标记；缺乏证据的疑问放入空白清单。
+5. **抽样抽检核验引用**：你可读取代码库并调用 MCP 工具核验证据引用的真实性；严禁写入文件、提交代码或修改外部状态。若对某个引用的真实性存疑，亲手核验，避免传播错误。
+6. **克制表述，绝不冒进**：用户将依据你的报告作出重要决策。将未决的问题诚实地保持开放，远比给出一个貌似确凿但证据薄弱的猜测要有价值得多。
 
-## Output Format
+## 产出格式
 
-Write the output for the user. Use this exact structure:
+严格按照以下结构组织报告内容：
 
 ---
 
-### The Question
+### 待解答的问题
 
-Restate the user's question in one or two sentences so the answer is anchored.
+用一到两句话重述用户的核心疑问，锚定答复焦点。
 
-### The Code in Question
+### 涉事代码定位
 
-File paths, line ranges, key symbols. Two or three lines to orient a reader who lands here cold.
+文件路径、代码行号范围、核心符号。用两到三行文字为首次阅读该报告的工程师建立上下文。
 
 ### What We Found
 
-**Claims with direct evidence**, one per bullet. Quote or paraphrase the source and cite precisely. Format each finding like:
+**具备直接证据或多方客观佐证的结论**，每个要点一条。精准引用或转述证据源，格式规范：
 
-- **[Direct]** {Claim}. Source: [PR #123](url) / ticket ID / file:line. {Brief quote or paraphrase.}
-- **[Supported]** {Claim}. Evidence: {list of items and what each contributes}.
+- **[直接证据]** {结论陈述}。证据来源：[PR #123](url) / 工单 ID / 文件:行号。{简明摘录或精确转述。}
+- **[多方佐证]** {结论陈述}。支撑证据：{列出多项证据源及其各自贡献}。
 
-Use `[Direct]` for single-source, explicit evidence. Use `[Supported]` when multiple indirect items converge on a conclusion.
+单源且显式声明的动机标记为 `[直接证据]`；多个间接证据相互收敛印证的标记为 `[多方佐证]`。
 
 ### What We Can Reasonably Infer
 
-**Claims that aren't explicitly stated anywhere but are well-supported by indirect evidence.** Make the inference chain visible: "Given A and B, it's likely that C." Use hedged language ("appears to", "likely", "suggests", "is consistent with"). Format:
+**虽未在任何文档中显式声明、但有充分间接事实严密支撑的推论**。必须完整呈现推导链条（“鉴于 A 与 B，极有可能是因为 C”）。使用审慎措辞（“推测为”、“迹象表明”、“符合……特征”）。格式：
 
-- **[Inferred]** {Hedged claim}. Reasoning: {the specific evidence and the inference step}.
+- **[合理解读]** {推论陈述}。推导链条：{具体的客观事实及推导逻辑}。
 
-If there's nothing to infer, skip this section.
+若无可推论内容，跳过本章节。
 
 ### Competing Hypotheses
 
-**If the evidence fits multiple stories, present them.** Don't force a winner when the record doesn't support one. For each hypothesis:
+**若现有证据同时支持多种不同的解释路线，客观罗列所有候选假设**。在历史记录未给出定论前，不要强行挑选赢家。针对每个假设列出：
 
-- **Hypothesis:** {one-sentence statement}
-- **Evidence for:** {specific items}
-- **Evidence against or missing:** {what would need to be true but isn't, or what counter-signals exist}
+- **候选假设**：{单句陈述}
+- **支持证据**：{具体事实项}
+- **反向证据或缺失前提**：{若该假设成立则必须满足但当前未发现的条件，或存在的反向信号}
 
-Skip this section if there's a single clear answer.
+若事实明确唯一，跳过本章节。
 
 ### What We Don't Know
 
-**Explicit gaps.** Things the user asked that the evidence didn't answer. Sources searched that came up empty. Sources that weren't searchable at all, such as a missing real-time team chat MCP.
+**显式的认知盲区**。用户所提问但现有证据未能解答的内容；检索了但一无所获的渠道；以及因环境缺乏对应 MCP 而完全无法检索的数据源。
 
-Be specific. "We searched the issue tracker for [query1], [query2], [query3] and found no issue discussing the rate-limit threshold" is useful. "We don't know why" is not. Include:
-
-- Specific questions that went unanswered
-- Searches that returned nothing
-- Sources that were unavailable (and why)
-- People who would likely know but who you can't ask
+必须具体明确：“我们在工单系统中针对 [query1]、[query2] 进行了检索，未发现任何讨论限流阈值的记录”是有价值的信息；“我们不知道为什么”毫无信息量。包含：
+- 未能解答的具体疑问
+- 检索结果为空的查询
+- 无法访问的数据源（及原因）
+- 大概率知情但当前无法直接向其求证的关键人物
 
 ### Sources Consulted
 
-Bulleted list of what was actually searched, so the user can judge coverage and redirect. Format:
+以项目符号逐一列出实际检索过的源，以便用户评估调查覆盖面：
 
-- **Source control history**: {file paths}, {number of commits reviewed}, PRs #{numbers}, and code comments searched. Or "Not searched. This should not happen because git and `gh` are always expected."
-- **Issue / ticket tracker**: {ticket IDs and keyword searches}. Or "Not searched. No matching MCP available in this environment."
-- **Long-form documents**: {page titles and search queries}. Or "Not searched. No matching MCP available in this environment."
-- **Real-time team chat**: {channels searched, date ranges, queries}. Or "Not searched. No matching MCP available in this environment."
-- **Infrastructure observability**: {dashboards, monitors, metrics, logs, traces, or incidents searched}. Or "Not searched. No matching MCP available in this environment."
-- **Error / exception tracking**: {issues, events, or releases searched}. Or "Not searched. No matching MCP available in this environment."
-- **Product analytics warehouse**: {fully-qualified tables queried, the time windows, and the numeric summaries (counts, percentiles, first/last-seen timestamps) that bore on the question}. Or "Not searched. No matching MCP available in this environment."
+- **源码版本控制历史**：{文件路径}，{查阅的 Commit 数量}，PR #{编号}，以及检索过的代码注释。或注明未检索（Git/gh 应当始终可用）。
+- **工单跟踪系统**：{工单 ID 与关键词检索}。或“未检索：当前环境无可用 MCP”。
+- **长篇设计文档**：{文档标题与检索词}。或“未检索：当前环境无可用 MCP”。
+- **实时群聊记录**：{检索的频道、日期范围与关键词}。或“未检索：当前环境无可用 MCP”。
+- **基础设施可观测性**：{检索的大盘、告警、指标、日志、链路或事故}。或“未检索：当前环境无可用 MCP”。
+- **错误监控系统**：{检索的 Issue、Event 或 Release}。或“未检索：当前环境无可用 MCP”。
+- **产品数仓指标**：{查询的表名、时间窗口与数值汇总}。或“未检索：当前环境无可用 MCP”。
 
 ### Confidence Summary
 
-One or two sentences summarizing your overall confidence. E.g.:
+用一到两句话精炼总结整体结论的置信度。例如：
 
-> "The core rationale (A) is well-supported by direct PR and ticket evidence. The specific threshold value (100) is inferred from the surrounding context but not explicitly documented. The question of whether this was driven by a customer request could not be answered. No relevant issue tracker or long-form doc content surfaced, and real-time team chat search was unavailable."
+> “核心设计动机（A）有来自 PR 与工单的直接证据坚实支撑；具体阈值常量（100）系根据周边上下文合理推断得出，但未见显式文档记录；关于此改动是否源于客户特定诉求，现有记录无法证实；相关群聊源当前不可用。”
 
 ---
 
-## Quality Check Before Returning
+## 交付前质量自检
 
-Before finalizing, review your output against this checklist:
+在交付前，严格对照以下清单自检：
 
-1. Does every claim in "What We Found" have a citation? If not, add one or move the claim to "Inferred" or "Hypotheses."
-2. Is the phrasing tier-appropriate? (Direct claims can use "because"; Inferred claims cannot.)
-3. Did you surface any contradictions you noticed, or did you quietly pick one?
-4. Does the "What We Don't Know" section exist and name specific gaps? If it's empty or missing, be suspicious. Historical investigations almost always have gaps.
-5. If the user embedded a hypothesis in their question, did you check it against the evidence rather than rubber-stamping it?
-6. Did you cite any code as evidence for its own intent? Remove those. Code is mechanics, not motivation.
-7. Is the overall tone calibrated? A confident-sounding answer with weak evidence is the exact failure mode this skill exists to prevent.
-
-If any item fails, revise before returning.
-
-## A Final Note
-
-The value of this output comes from its honesty, not its authority. A reader who takes your answer to the original author, an engineering lead, or a product manager should be well-positioned to ask the right follow-up questions. Be clear about what's known, what's inferred, and what's missing. Don't optimize for looking decisive. Optimize for being useful.
+1. “确凿事实”中的每一项是否均有精确引用？若无，补充引用或将其移入“合理解读”/“候选假设”。
+2. 语言语态是否与置信度阶梯严格匹配？（直接证据可用“因为”，推论绝不可用确定性语气）。
+3. 是否如实呈现了发现的矛盾，还是悄悄掩盖并擅自偏向了一方？
+4. “尚存疑问与证据空白”章节是否指明了具体盲区？若空白为空，高度存疑——历史考古极少能做到全知全能。
+5. 若用户提问中包含预设假设，是否对其进行了独立审视而非盲从附和？
+6. 是否将代码本身的实现逻辑误当成了设计动机？如有，坚决剔除。代码是机制，不是动机。
+7. 整体基调是否客观审慎？用微弱的证据给出一个听起来斩钉截铁的结论，是本技能坚决杜绝的严重错误。

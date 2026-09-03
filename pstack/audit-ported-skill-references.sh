@@ -11,24 +11,24 @@ if grep -rn -i -e "$legacy_pattern" "$skills_dir"; then
 	exit 1
 fi
 
-for skill in writing-for-agents unslop playwright research; do
+for skill in writing-for-agents unslop playwright; do
 	test -f "$skills_dir/$skill/SKILL.md" || {
 		printf '%s\n' "missing replacement skill: $skill" >&2
 		exit 1
 	}
 done
 
-test ! -e "$skills_dir/poteto-mode/playbooks/autopilot-stack.md"
+test ! -e "$skills_dir/tomato-mode/playbooks/autopilot-stack.md"
 
 missing=0
-for reference in $(sed -n 's/.*`\(playbooks\/[^`]*\.md\)`.*/\1/p' "$skills_dir/poteto-mode/SKILL.md"); do
-	if test ! -f "$skills_dir/poteto-mode/$reference"; then
+for reference in $(sed -n 's/.*`\(playbooks\/[^`]*\.md\)`.*/\1/p' "$skills_dir/tomato-mode/SKILL.md"); do
+	if test ! -f "$skills_dir/tomato-mode/$reference"; then
 		printf '%s\n' "missing routed playbook: $reference" >&2
 		missing=1
 	fi
 done
 test "$missing" -eq 0
 
-grep -r -q '^description: .*use research for external libraries, API specifications, or general technical facts' "$skills_dir/why/SKILL.md"
+grep -r -q '^description: .*针对外部第三方库或通用技术事实请使用 research' "$skills_dir/why/SKILL.md"
 
 printf '%s\n' 'ported skill references verified'

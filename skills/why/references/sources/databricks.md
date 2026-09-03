@@ -1,70 +1,56 @@
-# Databricks Analytics & System Tables
+# Databricks Analytics
 
-## What this source contains
+## 本数据源包含的资产
 
-Databricks is the product-analytics, data-pipeline, and warehouse-telemetry layer. It complements Datadog: Datadog is the *infra/runtime* view, Databricks is the *product/data* view (what users did, which experiments ran, how feature usage evolved, where a threshold constant came from).
+Databricks 承载了产品分析、数据流水线以及数仓遥测数据。它与 Datadog 形成互补：Datadog 呈现的是**基础设施/运行时**视角，Databricks 呈现的是**产品/数据**视角（用户的真实行为轨迹、灰度实验运行情况、功能调用量演进、阈值常量的真实统计来源）。
 
-- **Product analytics events.** `your_warehouse.events.analytics_track_event` (raw) and typed, deduplicated per-event dbt models in `<your_analytics_db>.<schema>.<table>`. User behavior: feature invocations, clicks, accepts/rejects, submissions, client-reported errors.
-- **Usage & billing events.** `your_warehouse.events.usage_event` / `<your_analytics_db>.<schema>.stg_usage_events`; `your_warehouse.events.raw_model_event` / `<your_analytics_db>.<schema>.stg_raw_model_events`. For cost- or volume-driven decisions.
-- **Experiment / feature-flag data.** Exposure and outcome tables. **Schema is company-specific.** Probe with `SHOW TABLES` before assuming names.
-- **System tables.** `system.query.history`, `system.compute.warehouses`, `system.billing.*`, `system.access.audit`. Answer "was this query expensive?", "how often did anyone run this?", "when did warehouse load spike?"
-- **dbt lineage.** Models in `<your_analytics_db>.<schema>` reveal what pipelines depend on a table/field; upstream changes frequently motivate consumer-code changes.
-- **Databricks notebooks.** Exploratory analyses engineers wrote before code changes. **Not queryable via the SQL MCP.** If you suspect the rationale lives in a notebook, name it as a gap.
+- **产品埋点事件表**：原始行为日志与经 dbt 清洗去重的分表。记录用户真实行为：功能调用、点击、接受/拒绝、提交、前端上报的业务错误等。
+- **用量与计费事件表**：针对成本控制或用量驱动的架构决策提供依据。
+- **灰度实验与 Feature Flag 数据**：实验人群曝光表与效果指标。
+- **系统表**：`system.query.history`、`system.billing.*` 等，回答“当年这条查询有多慢”、“某接口每天被调用多少次”、“数仓负载何时发生激增”。
+- **dbt 血缘拓扑**：明确下游流水线对特定表/字段的依赖。
+- **Databricks Notebooks**：工程师在编码前编写的探索性分析脚本（注意：SQL MCP 无法直接查询 Notebook 内容；若怀疑动因在 Notebook 中，如实记录为盲区）。
 
-## How to search it
+## 常用检索手段
 
-Use the Databricks SQL MCP. Primary tool: `execute_sql_read_only`. If it returns a `statement_id`, poll with `poll_sql_result` rather than re-running.
+使用 Databricks SQL MCP，核心工具为 `execute_sql_read_only`（若返回 `statement_id`，使用 `poll_sql_result` 轮询）。
 
-**Orient before querying.** Schemas are company-specific; probe before trusting a table name:
+**查询前先探查结构**（库表命名因企业而异）：
 
 ```sql
 SHOW TABLES IN <your_analytics_db>.<schema> LIKE '*<keyword>*';
 DESCRIBE TABLE <your_analytics_db>.<schema>.stg_<event>;
 ```
 
-**Time-bound every query.** These tables are huge and unconstrained scans time out. Filter on `_timestamp` (events) or `start_time` (`system.query.history`) with a window bracketing the ship date, typically ~30 days before and after, wider only for strong reason.
+**所有查询必须严格限定时间范围**：数仓数据量极其庞大，全表扫描必定超时。在 `_timestamp` 或 `start_time` 上限定 PR 合并日期前后约 30 天的窗口。
 
-**Prefer typed dbt models over the raw table.** `<your_analytics_db>.<schema>.<table>` is deduplicated, typed, and liquid-clustered; `your_warehouse.events.analytics_track_event` has duplicates and untyped `properties_json`. Model-name pattern: `stg_<source>_<event_name_with_underscores>`, where `<source>` is `app`, `backend`, `website`, or `cli`; confirm the exact model name with `SHOW TABLES` when the pattern alone doesn't resolve it. Drop to the raw table only when there's no dbt model yet, or you need events from inside the dbt refresh lag.
+**优先查询类型化的 dbt 模型表**：相比包含无结构 JSON 的原始大宽表，`stg_*` 视图具备去重与强类型字段，查询效率更高。
 
-**Column conventions on the typed dbt models** (knowing these avoids a `DESCRIBE` round-trip):
+### 高价值调查模式
 
-- `_timestamp`, `_id`, `_auth_id`, `_request_id`, `event_name`. Standard on every model
-- `properties_<name>`. Typed, underscore-cased event properties (`properties_entrypoint`, `properties_size_bytes`, …)
-- `context_team_id`, `context_client_version`, `context_country`, `context_client_os`. Pre-extracted client context
+1. **功能调用量演进轨迹**：在 PR 合并前后 ±30 天内按天统计相关事件量。合并后从 0 陡增并平稳维持，是该 PR 正式上线该功能的强力旁证；逐步衰减至 0 则表明为废弃清理。
+2. **安全防护/防御阈值常量来源**：在 PR 提交前 14 天内，统计相关业务属性字段的分位数分布（中位数 / p99 / 最大值）。若 p99 统计值与代码中硬编码的阈值常量吻合，直接证明该常量源于真实数据分布。
+3. **灰度实验与开关比对**：查询实验曝光表中对应 Flag Key 的分流与放量记录。
+4. **历史高耗时查询定位**：通过 `system.query.history` 检索包含特定表名或符号的慢查询，找出驱动本次性能重构的罪魁祸首。
 
-### Investigation patterns that tend to pay off
+## 典型的高价值证据特征
 
-Pick the table + column combination that matches the target:
+- 某类错误分类事件在包含防御代码的 PR 合并上线后，发生频次骤降至归零。
+- 实验记录表明确记录了目标功能 Flag 在 PR 上线同期由灰度转为全量放行。
 
-1. **Event usage trajectory.** Daily counts on the relevant `stg_*` model across a ±30d window around the PR merge. A step function from zero to steady volume within a day or two of the merge is strong circumstantial evidence the PR launched the feature. A decay to zero suggests a deprecation or deletion.
-2. **Guard-rail / defensive-check origin.** Distribution (median / p99 / max) of the relevant `properties_<name>` column in the 14 days *before* the PR. A p99 that matches the target's threshold constant suggests the number was chosen from data.
-3. **Experiment / feature-flag lookup.** `SHOW TABLES ... LIKE '*experiment*'` to find the exposure table, then pull exposure counts by variant for the relevant flag key near the PR date.
-4. **Query-history evidence for migrations, backfills, or perf rewrites.** `system.query.history` filtered by `statement_text ILIKE '%<table_or_symbol>%'` with a tight `start_time` window surfaces the expensive queries that likely motivated the change (sort by `total_duration_ms` or aggregate `SUM(read_bytes)`, `COUNT(*)`).
-5. **dbt lineage.** If the target reads from or writes into a `<your_analytics_db>.<schema>` model, the model's own git history (in this repo) often carries the rationale. Hand that lead back to the git investigator rather than chasing it yourself.
+## 常见陷阱与注意事项
 
-## What good evidence looks like here
+- **记录了日志不等于因果关系**：埋点事件的存在只说明有人关注此指标，不等于代码修改必然由此引发，须与 Git 提交交叉比对。
+- **埋点格式变更伪信号**：事件量的突增可能只是新上了埋点，而非用户行为突变。
+- **Schema 结构演进**：老数据中的某些属性可能未被提取为独立列，仅存在于原始 JSON 字符串中。
+- **数据保留周期截断**：若所查时间段超出了数仓的数据生命周期保留策略，属于**客观盲区**，绝非“无数据”。
 
-Beyond the pattern shapes above:
+## 输出要求
 
-- An error-classifying event's count drops to near zero in the days after a defensive-code PR. Suggests the PR resolved that error class
-- An exposure table row names the target's feature-flag key with a "shipped" / "concluded" decision around the PR ship date
-
-## Common pitfalls
-
-- **Instrumented ≠ caused.** An event's existence means someone cared enough to log it, not that the target code exists *because* of it. Pair with a PR/commit citation from the git investigator before claiming causation.
-- **Silent instrumentation changes.** A step function in event volume may mean a new event started being logged, not that user behavior changed. Check for instrumentation PRs in the same window before reading the ramp as a feature-launch signal.
-- **Schema drift.** Event properties evolve; a column on the typed dbt model today may not have existed when the target was written. Older data may carry the property only inside raw `properties_json`.
-- **dbt refresh lag.** `<your_analytics_db>.<schema>.*` is rebuilt on a schedule (often hourly/daily). For events from the last few hours, fall back to `your_warehouse.events.*` and deduplicate by `_id`.
-- **Company-specific tables.** Experiment, feature-flag, billing, and usage tables vary. Reporting a result from a table whose existence you never confirmed is a classic failure mode. Probe with `SHOW TABLES` / `DESCRIBE TABLE` first.
-- **Retention cliff.** If the relevant window predates the table's retention or the dbt model's creation date, that's a *gap*, not a null result. Name it explicitly so the synthesizer doesn't read "no results" as "no activity."
-- **Notebooks aren't queryable.** The SQL MCP can't see Databricks notebooks. If you suspect the rationale lives in one, return a gap.
-
-## What to return
-
-For each relevant finding:
-- Type (product event / experiment exposure / usage or billing event / system-table row / dbt model)
-- Fully-qualified table name and the exact query you ran
-- Time window queried
-- Compact numeric summary (counts, percentiles, first/last-seen timestamps). **Don't dump raw rows.**
-- Temporal correlation with the target's ship date (e.g., "first row 2024-08-15; PR #49074 merged 2024-08-14")
-- Relevance + strength: direct / circumstantial / weak
+针对相关发现输出：
+- 证据类型（产品事件 / 实验曝光 / 用量事件 / 系统表 / dbt 模型）
+- 完整表名与执行的精确 SQL 查询
+- 查询的时间窗口
+- 精炼的数值统计摘要（计数、分位数、首次/末次时间戳，严禁倾倒原始大表）
+- 与目标代码合并上线的时间相关性
+- 结论强度定级（直接 / 旁证 / 弱相关）

@@ -1,44 +1,50 @@
 ---
 name: create-verification-skill
-description: "Generate a project-local verification skill that drives your app the way a user does — any language, framework, or platform. Use for /create-verification-skill, \"make a control skill for this repo\", or when a project has no scripted way to prove UI/CLI/service behavior."
+description: "为项目量身生成专属的本地 Verification Skill，能够像真实用户一样自动化驱动你的应用程序（涵盖任何语言、框架或平台）。用于 /create-verification-skill、“为该仓库创建控制验证技能”，或当项目缺乏通过脚本自动化验证 UI/CLI/服务行为的现成手段时。"
 disable-model-invocation: true
 ---
 
-# Create a verification skill
+# Create Verification Skill
 
-Every serious project needs a scripted way to drive the real app and prove behavior: launch it, exercise a feature the way a user would, and capture evidence. This skill generates that as a project-local skill (`.claude/skills/verify-<app>/` inside the repo) tailored to the repo. You write the generator's output for the next agent, not for a human: it will be read cold, mid-task, by an agent that has never seen the app.
+任何严谨的工程项目都需要一套确定性的脚本化手段，用于驱动真实的应用程序并验证系统行为：启动应用、像真实用户一样操作具体功能、并捕获可审计的客观证据。本技能用于在仓库中生成专属的项目级验证技能（存放于仓库内 `.claude/skills/verify-<app>/` 目录）。
 
-## 1. Interview the repo, not the user
+必须明确：你生成的产物是给后续冷启动接手的 Agent 阅读的，而非普通人类说明书——后续 Agent 将在任务中途、在对该应用毫无先验了解的情况下直接读取并严格执行该规程。
 
-Answer these from the codebase and only ask the user what you cannot observe:
+## 1. 深入调研代码库（代码优先，拒绝频繁发问）
 
-- **Surface:** what does a user actually touch? A web UI, a CLI/TUI, a desktop app, an API, a mobile app, a library? A repo can have several; pick the primary one and note the rest.
-- **Run:** how does the app start locally? Prefer the repo's own documented dev command (package scripts, Makefile, README quickstart). Note ports, env vars, seed data, auth.
-- **Drive:** how can an agent interact with it programmatically? Existing harnesses first — Playwright/Cypress specs, expect scripts, PTY helpers, curl-able endpoints, a debug port. Only then pick a generic recipe: browser/CDP for web and Electron, a tmux/PTY harness for CLI/TUI, plain HTTP for services.
-- **Observe:** what evidence can be captured? Screenshots, terminal transcripts, response bodies, logs, exit codes, DB state.
-- **Isolate:** can two instances run side by side (ports, data dirs, profiles)? If not, say so in the generated skill: refusing to double-drive a shared instance beats corrupting the user's session.
+直接从代码库中摸清以下事实，仅在面对客观无法通过走读代码获知的信息时才向用户发问：
 
-If the checkout doesn't build or start as-is, fix that first (or report it precisely) before generating; a skill written against a broken base teaches wrong steps. When an irrelevant missing asset blocks startup (a static dir the API never serves, a sample config), the generated skill may create it, clearly marked as verification scaffolding, and remove it in cleanup.
+- **Surface**：用户在现实中究竟触碰什么？Web 前端 UI、CLI/TUI 终端、桌面客户端、后台 API 服务、移动端 App 还是纯 SDK 库？一个仓库可能包含多种形态；锁定主要形态并注明其他形态。
+- **Run**：应用在本地如何启动？优先查阅仓库自身记录的成熟开发命令（package.json 脚本、Makefile、README 快速上手等）。明确监听端口、必需的环境变量、初始种子数据以及认证凭据。
+- **Drive**：Agent 如何通过程序化方式与应用进行动态交互？优先复用既有测试工装（Playwright/Cypress 用例、Expect 脚本、PTY 辅助工具、可 Curl 的端点、调试端口等）；随后选择通用自动化方案：Web 与 Electron 采用浏览器/CDP 协议，CLI/TUI 采用 Tmux/PTY 终端工装，后台服务采用标准 HTTP 接口。
+- **Observe**：可捕获何种可检验的客观证据？界面截图、终端会话输出、响应体载荷、运行时日志、退出状态码、数据库落盘状态。
+- **Isolate**：能否并发运行两个独立实例（端口、数据目录、配置隔离）？若不支持，在生成的技能中显式注明：严禁并发双向驱动共享实例，防止污染破坏用户的日常会话。
 
-## 2. Generate the skill
+若当前代码库存在构建错误或无法正常启动，必须在生成技能前率先修复或精准汇报阻塞项；在一个无法跑通的代码基线之上生成验证技能，只会沉淀错误的执行步骤。若因缺失无关的静态资源导致启动受阻，可在生成的技能中临时创建该工装资源，并严格在清理阶段将其删除。
 
-Write `.claude/skills/verify-<app>/SKILL.md` inside the repo with YAML frontmatter (`name: verify-<app>` and a `description` that names the app, the surface, and when to reach for it — without frontmatter the skill never registers) and these sections, each grounded in what the interview actually found (no placeholders left):
+## 2. 生成验证技能定义文件
 
-- **Launch:** the exact command that starts the app for verification, and how to tell it's ready (a log line, a port answering, a prompt). Include teardown. For a short-lived CLI or TUI there is no server to keep alive: launch means build the binary (or install deps) once, then start each drive in its own isolated PTY or tmux session.
-- **Doctor:** one read-only check that answers "is this instance worth driving?" — process up, right version/build, port owned by us, auth valid. An agent runs this first whenever anything looks off.
-- **Drive:** the harness recipe with real selectors/commands from this repo, not examples. Prefer stable handles (ARIA labels, data attributes, prompt strings, route paths) over coordinates and tab order.
-- **Evidence:** what to capture for a proof and where it goes. State the proof standards: exercise the real user path, not internal setters or test-only endpoints; capture the action and the resulting state, not just the final screen; verify side effects (files written, rows inserted, messages sent) alongside what's visible; mocks only where a production boundary already isolates the external system. When the safe path is a dry-run or test mode, verify what it actually skips by observing (files, network, git refs) rather than trusting its name: some dry-runs still touch the network or open a browser.
-- **Cleanup:** how to tear down instances the run created. Never kill by process name; kill what you started. Cleanup removes instances and scratch state, never the evidence: proof artifacts survive the teardown, in a location the skill names.
-- **Helpers:** any script the skill ships is executable and its invocation is shown in the skill body. A helper the reader has to reverse-engineer is not a helper.
+在仓库中创建 `.claude/skills/verify-<app>/SKILL.md`，包含规范的 YAML Frontmatter（声明 `name: verify-<app>` 以及包含应用名、交互表面与适用场景的精炼 `description`），并严格落地以下章节（全部填写真实代码细节，严禁保留空占位符）：
 
-## 3. Seed the feature map
+- **Launch**：用于启动应用以供验证的确切命令，以及如何判定应用已就绪的明确信号（特定日志输出行、端口连通响应、命令提示符等），包含关闭销毁指令。针对短生命周期的 CLI/TUI 工具无需维持常驻服务：启动即意味着先完成二进制编译（或依赖安装），随后在独立的 PTY 或 Tmux 会话中开启单次驱动。
+- **Doctor**：一个轻量的只读检查，用于快速回答“当前实例是否处于可正常驱动的健康状态？”（进程存活、版本构建正确、目标端口由我方独占持有、认证状态有效）。Agent 在任何执行异常时优先运行此项。
+- **Drive**：具体的工装调用方法，使用该仓库中的真实选择器与具体命令，拒绝虚构示例。坚决优先使用语义稳定的句柄（ARIA label、data 属性、提示符特征串、路由路径），坚决避免使用脆弱的绝对坐标与 Tab 键顺序。
+- **Evidence**：证明功能正常的证据形态及其存储路径。明确证据标准：驱动真实的用户交互路径，严禁调用内部私有 Setter 或仅供测试的后门端点；同时捕获触发动作与最终产生的系统状态，而非仅截取最终画面；核验伴随的副作用（文件写入、数据库插入、消息发送）；仅在生产架构本身已解耦的外部边界处使用 Mock。当通过 Dry-run 模式测试时，必须通过实测观察其真正跳过了哪些动作（文件、网络、Git 引用），严禁盲信模式名称。
+- **Cleanup**：如何彻底销毁本次运行创建的实例。严禁按进程名称全局 Kill；仅清理本次运行自己拉起的进程。清理操作仅删除临时实例与草稿状态，**坚决不得删除已捕获的测试证据**：证据文件必须在清理后完整保留在指定路径。
+- **Helpers**：随技能附带的任何脚本均须具备可执行权限，并在技能正文中给出明确的调用示例。
 
-Create `.claude/skills/verify-<app>/features/README.md` inside the repo plus one file per user-facing feature you can identify (aim for the top 3-5 to start, from routes, commands, menus, or docs). Follow the shape in [`references/feature-map-example/`](references/feature-map-example/), with a README index and one file per feature. Each file answers, from the user's point of view: what the feature is, how to reach it, how to drive it with the harness, and what observable end state proves it works. The four H2s are `Sub-features`, `How to get to it (user POV)`, `Driving it with <harness>`, and `Gotchas`. The map is the repo's maintained verification source; a proof that drives one convenient entry point is incomplete when the map lists others.
+## 3. Feature Map
 
-## 4. Prove the generated skill before handing it over
+在仓库中创建 `.claude/skills/verify-<app>/features/README.md`，并为识别出的每个核心面向用户的功能各创建独立分册（初期建议覆盖最重要的 3 到 5 个核心功能）。结构严格参考 [`references/feature-map-example/`](references/feature-map-example/)，包含 README 总索引与各个独立功能分册。
 
-Run its own instructions end to end once: launch, doctor, drive ONE mapped feature (one is enough; the map exists so later runs can cover the rest), capture evidence, clean up. After cleanup, confirm the evidence still exists at the named location — a cleanup that eats the proof fails this step. Fix what fails, and run the generated cleanup after every failed iteration too, so broken attempts don't strand processes and ports. A generated skill that was never executed is a draft, not a deliverable.
+每个分册从用户视角出发回答：该功能是什么、如何导航触达、如何通过工装驱动、以及何种客观终态证明其运行正常。分册内固定采用四个二级标题：`Sub-features`、`How to get to it (user POV)`、`Driving it with <harness>`、`Gotchas`。功能地图即是仓库持续维护的权威验证资产。
 
-## 5. Offer the maintenance loop
+## 4. 交付前必须亲自全链路实跑验证
 
-Point the user at `/maintain-verification-skill` for keeping the map honest as the app changes. Suggest a cadence only if they ask.
+在正式向用户交付前，必须严格依照生成的技能指令亲手完整走通一遍：启动应用 → 执行健康检查 Doctor → 驱动实测一个已映射的功能 → 捕获客观证据 → 执行清理。
+
+清理完成后，确认捕获的证据文件依然完整保存在指定路径中（若清理逻辑误删了证据，判定本步骤失败）。修复遇到的任何问题，且在每次失败迭代后均须执行清理，确保不残留孤儿进程与端口占用。**从未亲手运行验证过的生成技能只是草稿，绝非合格的交付物。**
+
+## 5. 提示后续长效维护
+
+在交付后提示用户可通过 `/maintain-verification-skill` 技能在应用发生迭代时对功能地图进行长效维护更新。

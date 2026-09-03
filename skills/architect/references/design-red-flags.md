@@ -1,33 +1,32 @@
-# Design red flags
+# Design Red Flags
 
-Screen every candidate before synthesis. A red flag is a reason to revise or reject the shape.
+在执行架构方案综合裁决前，必须对照本规范逐一严格筛查每一个候选方案。出现以下任一危险信号，均构成要求修改或直接驳回该方案的充分技术理由。
 
-## Shallow module
+## Shallow Modules
 
-A shallow module exposes a large interface while hiding little complexity. Judge depth by the capability and policy hidden behind the public surface relative to the size of that surface. Prefer a simple interface backed by substantial behavior.
+浅模块对外暴露了过于庞大繁琐的接口表面，内部却仅封装了极其微薄的业务复杂度。衡量模块“深度”的核心指标是：相较于对外公开接口的精简程度，其内部究竟封装了多少高价值的业务能力、复杂策略与实现细节。坚决优先选择“接口极度简约、内部能力厚重”的Deep modules。
 
-Do not confuse a deep module with a deep call chain. A deep call chain scatters understanding across layers. A deep module concentrates capability behind one interface.
+切勿将深模块与深调用链混为一谈：深调用链将原本连贯的业务理解碎片化地分散到多个调用层中；而深模块则将强大的业务能力高度收拢内聚在单一清晰的接口边界之后。
 
-Look for these signs:
+典型危险特征：
+- 外部调用方必须手动协调调用多个细碎的方法，才能勉强拼凑完成一次完整的业务操作。
+- 对外公开的配置选项或参数中，泄漏了模块内部的生命周期阶段或底层技术选型细节。
+- 调用方即便完整学会了公开接口的使用，依然不得不深入研读内部源码才能正确避免踩坑。
 
-- Callers coordinate several methods to complete one operation.
-- Public options expose internal stages or implementation choices.
-- Learning the interface does not save the caller from learning the implementation.
+## Information Leakage
 
-## Information leakage
+信息泄漏会导致多个外部模块共同耦合在同一个底层内部技术决策之上。一旦某种私有数据表示、算法策略或底层通信协议细节散落在多处，未来对该细节的任何改动都将引发“牵一发而动全身”的全局协同修改灾难。
 
-Information leakage makes multiple modules depend on the same internal decision. A representation, policy, or protocol detail appears in more than one place, so changing it requires coordinated edits.
+将底层传输层、RPC 协议载荷或持久化存储格式的私有类型直接通过公开接口向外导出，属于典型的信息泄漏。必须在接口边界内部，将外部原始数据彻底解析（Parse）转换为内聚的领域模型。数据库 Schema、第三方框架私有对象以及通信协议细节必须严格保持在模块内部私有。
 
-Public re-exports of transport or wire types are leakage. Parse external data into domain types behind the interface. Keep storage schemas, framework objects, and protocol details private.
+## Temporal Decomposition
 
-## Temporal decomposition
+时序流水线分解是指机械地按照“时间执行的先后顺序”来组织模块结构，而非按照“模块所内聚的领域知识与业务所有权”进行切分。将系统粗暴拆解为“加载、校验、转换、保存”等割裂的处理阶段，往往会导致相同的数据模型定义及其业务不变量在多个阶段边界处被反复冗余编写。
 
-Temporal decomposition organizes modules by execution order instead of the knowledge they own. Separate load, validate, transform, and save stages often repeat one representation and its invariants across several boundaries.
+必须紧密围绕高内聚的业务领域知识与数据所有权来聚合代码。即便某些方法的触发时序完全不同，只要它们守护的是同一批核心业务决策与数据不变量，就必须严格归属于同一个高内聚模块。
 
-Group code around domain knowledge and ownership. Methods that run at different times can still belong to one module when they protect the same decisions.
+## Pass-Through Methods
 
-## Pass-through method
+纯透传转发方法是指仅仅机械地将接收到的参数原封不动转发给另一个具有完全相同签名的下游方法。它徒增了一层间接调用栈，却完全没有封装任何实质性的业务复杂度。
 
-A pass-through method forwards the same arguments to another method with the same shape. It adds a layer without hiding complexity.
-
-Remove it or move responsibility to the module that can complete the operation. Keep a forwarding boundary only when it adds policy, adaptation, or a distinct abstraction.
+果断删除此类空洞的透传包装层，将调用职责直接交由真正执行操作的核心模块承担。唯有当该转发边界确实引入了安全拦截、协议适配、跨进程通信或独立的领域抽象时，方可保留。

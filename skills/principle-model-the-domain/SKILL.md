@@ -1,26 +1,26 @@
 ---
 name: principle-model-the-domain
-description: "Apply when writing stateful logic, or when code branches a lot or repeats a shape assumption across files. Encode the domain in a structure instead of scattered conditionals."
+description: "编写有状态业务逻辑、复杂多分支逻辑，或跨文件重复数据结构约定时使用。将领域规则固化为明确的强类型数据结构，杜绝散落各处的条件分支判断。"
 disable-model-invocation: true
 ---
 
-# Model the Domain
+# 领域建模（Model the Domain）
 
-Encode the real domain in a data structure instead of scattering it across conditionals.
+将真实的业务领域实体与规则固化为明确、自解释的数据结构，而非将其碎片化地散落在漫无边际的条件判断语句中。
 
-**Why:** Scattered booleans, repeated shape assumptions, and branching spread across files are accidental complexity. A structure that matches the domain makes invalid states unrepresentable and deletes branches. Choosing it at write time is cheap; recovering it later reads as a refactor and gets deferred.
+**核心理由。** 散落各处的布尔标记、跨文件重复的结构假设以及四处蔓延的 `if/else` 分支，都会急剧增加系统的附带复杂度（Accidental complexity）。一个与业务领域高度吻合的优雅结构能够从根本上消除非法状态并大幅精简分支逻辑。在最初编码时选对领域模型成本极低；而若后续再回过头来修正，则往往演变为一拖再拖的高风险重构。
 
-**Reach for structures like these:**
+**推荐的领域结构实践：**
 
-- A state machine instead of scattered booleans, phases, or lifecycle checks.
-- A typed object/model instead of loose parameters or repeated shape assumptions.
-- A map, registry, lookup table, or discriminated union instead of branching spread across files.
-- A reducer or command/event model instead of ad hoc state mutations.
-- A module organized around one body of domain knowledge instead of a sequence such as load, validate, transform, and save. Execution order is not ownership.
-- A small module boundary that gathers repeated behavior, ownership, or invariants.
-- A queue, cache, index, graph/tree, or normalized collection where the data access pattern calls for it.
-- Any other structure that fits. The list above covers the common cases only. When none fits, work out what the code must never allow and how the data gets read, then find the structure that encodes exactly that.
+- **采用状态机（State Machine）**，替代散落各处的零碎布尔量、临时阶段字符串或混乱的生命周期条件检查。
+- **采用强类型模型与领域实体**，替代松散的位置参数列表或各处暗中假设的弱类型字典。
+- **采用映射表（Map）、注册表（Registry）、查找表或可辨识联合（Discriminated Unions）**，替代跨多文件蔓延且难以同步的庞大分支语句。
+- **采用纯粹的 Reducer 或命令/事件溯源（Command/Event）模型**，替代随心所欲的散乱可变状态直接篡改。
+- **围绕高内聚的业务领域概念组织模块边界**，而非按“加载、校验、转换、保存”等机械流水线步骤横向切分；时序执行的先后顺序绝不等于模块的领域归属。
+- **提炼紧凑的领域边界**，将重复的行为逻辑、数据所有权契约与强不变量严格收拢至内聚边界内部。
+- **根据数据访问模式选用专业数据结构**：按需引入任务队列、持久缓存、倒排索引、图/树拓扑或规范化实体集合。
+- **根据实际场景灵活建模。** 上述清单仅列举了常见模式；若无现成模式完全契合，先明确定义“系统坚决不允许出现哪些非法状态”以及“数据将以何种模式被读取检索”，随后设计出恰好能够固化这两点的专属结构。
 
-Do not force an abstraction. Prefer boring code if the current shape is already clear, local, and unlikely to grow. Be skeptical of an abstraction that adds indirection without removing branches, duplicated rules, invalid states, or lifecycle risk.
+**防范过度设计。** 警惕脱离实际的空洞抽象。若当前代码形态已经足够清晰、局部内聚且无持续膨胀预期，直接采用平实直白的代码即可。对于那些凭空增加一层间接调用、却未能切实消除条件分支、消除重复规则、消除非法状态或消除生命周期隐患的伪抽象，必须保持高度警惕与质疑。
 
-The tell that you skipped this is a new feature that grows an existing if/else chain by one more branch, or a second boolean that must stay in sync with the first. Temporal decomposition is another tell. Phase-named modules repeat the same domain rules across steps.
+**未贯彻本原则的典型危险信号：** 每次新增业务功能时，既有的 `if/else` 链条便不得不追加一个分支；或者在对象中引入了第二个必须与第一个布尔值严格保持同步的派生状态。按流水线时序切分模块也是典型病症：以处理阶段命名的模块往往会导致相同的领域校验规则在各个步骤中反复被机械重写。

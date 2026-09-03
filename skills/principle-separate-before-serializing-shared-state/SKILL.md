@@ -1,16 +1,17 @@
 ---
 name: principle-separate-before-serializing-shared-state
-description: "Apply when concurrent actors might write to the same file, branch, key, or state object. Eliminate the sharing first; serialize structurally only when one shared writer is a real invariant."
+description: "多个并发执行者可能写入同一文件、分支、键或状态对象时使用。优先从架构上拆分隔离以彻底消除共享；仅当单一共享写入目标确实属于系统不可动摇的强不变量时，才在结构层面实施严格串行化。"
 disable-model-invocation: true
 ---
 
-# Separate Before Serializing Shared State
+# 串行化共享状态前先消除共享（Separate Before Serializing Shared State）
 
-When concurrent actors might share mutable state, first ask whether they truly need the same mutable object. If not, eliminate the sharing. When sharing is real, enforce serialization structurally: lockfiles, sequential phases, exclusive ownership. Instructions and conventions are not concurrency control.
+当多个并发执行者可能共享可变状态时，首先质疑它们是否真的需要写入同一个可变实体。若非必要，优先从架构设计上彻底消除这种共享依赖。唯有在共享状态确属必要且无法消除时，方可通过结构化机制强制串行化（如分布式锁文件、严格的阶段拓扑、独占所有权模型等）。口头约定与软性规范绝不能充当并发安全控制手段。
 
-**Why:** Concurrent writes to shared state create race conditions that are intermittent, hard to reproduce, and expensive to debug. Telling agents or goroutines to "take turns" does not work.
+**核心理由。** 对共享可变状态的无序并发写入是滋生竞态条件（Race conditions）的温床。此类问题具有偶发性、难以本地复现且线上排查成本极高。指望多个 Agent 或并发 Goroutine/线程“自觉排队轮流访问”是完全不可靠的。
 
-**Pattern:**
-1. **Identify shared mutable state** (files both read and write, branches both push to, APIs both define and consume).
-2. **Default: eliminate the shared write target.** Ask: do these actors need one canonical object, or are they publishing independent facts? Give each actor its own owned file, key, branch, or state directory, and merge only at the read/reporting boundary. Two workers writing their own `lastX` field into one `state.json` is still shared mutation; `indexer-state.json` + `metrics-state.json` is not.
-3. **Only when one shared write target is a real invariant, serialize access structurally** (lockfiles, sequential phases, single-writer actor, or atomic compare-and-swap). Treat "we need a lock" as a design smell to check, not as the default answer.
+**核心模式：**
+
+1. **敏锐识别共享可变状态。** 包括多个并发实体均需读写的文件、多方可能同时推送的 Git 分支、一边被异步修改一边被消费的全局内存状态或共享 API 接口。
+2. **默认策略：在源头消灭共享写入目标。** 深入审视：这些执行者是在更新同一个全局规范实体，还是各自在发布彼此独立的事实数据？为每个并发执行者分配独立的文件、独立的存储键、独立的工作分支或独立的状态子目录，仅在最终读取聚合或汇报时在边界处进行合并。例如两个 Worker 分别向同一个 `state.json` 写入各自的 `lastUpdated` 字段仍属于危险的共享写入；而拆分为 `worker-a-state.json` 与 `worker-b-state.json` 则彻底消除了写入竞争。
+3. **唯有强不变量约束下，才在结构层面实施串行化。** 仅当单一共享写入目标确实构成系统不可妥协的核心业务不变量时，方可采用确定性的结构化机制进行串行化控制（如文件锁机制、严格的先后执行阶段、单写者 Actor 模型、或底层的原子 CAS 操作）。将“我们需要加一把锁”视为值得重新审视架构设计的负面味道（Code smell），而非下意识的第一解法。

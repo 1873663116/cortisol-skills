@@ -1,16 +1,16 @@
 ---
 name: principle-redesign-from-first-principles
-description: "Apply when integrating a new requirement into an existing design. Redesign as if the requirement had been a foundational assumption from day one, instead of bolting it on."
+description: "将全新需求融入既有系统设计时使用。假定该需求从系统构建的第一天起就是核心基础假设来通盘重新设计，严禁生硬外挂打补丁。"
 disable-model-invocation: true
 ---
 
-# Redesign From First Principles
+# 第一性原理重构（Redesign From First Principles）
 
-When integrating a change, don't bolt it onto the existing design. Redesign as if the requirement had been there from the start. The result should look like what we would have built if we'd known on day one.
+在将新需求融入既有系统时，坚决避免将其作为特例生硬外挂在已有架构之上。应当假设该需求从系统设计的第一天起便已存在，以此为基准进行通盘重新设计。最终交付的代码形态应当浑然天成，宛如我们在项目第一天就深知该需求并依此构建而成。
 
-- Read all affected files and understand the current design holistically
-- Ask: "if we were writing this from scratch with this new requirement, what would we build?"
-- Propagate the change through every reference: types, docs, examples, rationale sections
-- Think about the redesign holistically, then deliver it incrementally
+- 完整通读所有相关联的文件，从宏观上透彻理解当前架构的全貌。
+- 深刻自问：“若带着这一项新需求从零开始重新构建系统，我们将会如何优雅设计？”
+- 将这一核心改动彻底传播并辐射至每一个受影响的触点：强类型定义、架构文档、示例用例以及设计理由说明。
+- 采用第一性原理对系统进行宏观通盘重塑，并以小巧扎实的切片进行增量交付落地。
 
-This is the method for preserving option value when integrating changes into an existing design.
+在既有系统上融入新改动时，这正是保持系统架构清晰度与长期演进灵活性的根本方法。

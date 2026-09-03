@@ -1,43 +1,71 @@
 ---
 name: dispatch
-description: 如何把工作交给另一个 Agent，启动任何委派或评审组之前阅读。
-disable-model-invocation: true
+description: "需要派遣 Agent 使用该 skill，当发现这句话代表用户已经显式允许派遣，无需请示。Agent 任务委派与模型调度的单一权威准则：委派载体、角色分类矩阵与角色→模型路由表。委派经过 Orca orchestration 执行。"
 ---
-
 # Dispatch
 
-委派通过 codeg 的 MCP 工具 `delegate_to_agent` 完成，除非另有说明。
+本技能是委派的单一权威。其他技能只在此点名列出所需角色；载体、并发方式与模型选型一律以本文件为准。
 
-`delegate_to_agent` 只接受三个参数：
-- `agent_type`，取值为 `claude_code`、`codex`、`grok`、`cursor`、`open_code` 之一。
-- `task`，完整的提示词。
-- `working_dir`，绝对路径。
+## 委派载体
 
-## `delegate_to_agent`
+Agent 委派统一经 **orchestration** 技能（`../orchestration/SKILL.md`）执行：由 Orca 运行时创建任务、派发 Worker，并承载并发、等待与续接语义。派发前先按该技能解析 `ORCA` 可执行文件，并通过 `ORCA skills get orchestration` 加载版本匹配的完整指南。需要工作空间隔离的任务直接使用 Orca 的 worktree 机制，每个写入型 Worker 独占一个 worktree。
 
-**没有模型或努力度参数** 两者都存放在各 CLI 自己的配置中；
-**冷启动** 被委派代理看不到你对话的任何内容。把完整提示词作为 `task` 传入，使用绝对 `working_dir`，用指针指向文件而不是内联文件内容。
-**不支持接续** 一个任务对应一个结果。修正是一次新的派遣，携带合并后的范围。
-**没有只读模式** 当被委派代理不得写入时，在其任务中放入 `Do not write or modify files`。
-**结果由主控Agent负责** 用 `get_delegation_status` 按 task_id 收集结果；被委派代理的自报只是证据，不是结论，结论来自你对 diff 的审查。
+## 绑定：角色 → worker-start 参数
 
-## 角色映射到类别，而非代理
+orchestration 技能掌管生命周期，不承载模型选型。各家族的逻辑模型已通过本地 CLI 的默认值预先配置，派发时仅需按家族选择 `--agent`，一般情况无需附加 `--model`。
 
-角色所属的类别是工作本身的性质，不会改变。由哪个代理服务该类别，则每次派遣时根据你实际拥有的余量来决定。
-
-| 类别 | 角色 | 工作提出的要求 |
+| 模型家族 | `--agent` | 默认模型（由各 CLI 配置决定） |
 |---|---|---|
-| 判断 | `why` 综合者、`how` 讲解者、`reflect` 判断与发散与综合、最难的改动、任何意图含糊的工作 | 推理质量 |
-| 逐字精确 | bug 修复、性能问题、爬山优化、`reflect` 工具化、系统性扫改、迁移、跨大量文件的机械重写 | 长时间、不漂移地精确遵循指定序列 |
-| 批量 | `swarm` 工人、`why` 调查员、`how` 探索者、琐碎编辑、功能、重构 | 体量。任何有能力的代理都行，因此选择是预算与延迟的取舍 |
-| 评审组 | `how` 批评者、`arena` runner、`architect` runner、`interrogate` 评审者 | 分歧 |
+| Claude | `claude` | `claude-opus-5` |
+| Grok（Cursor 托管） | `cursor` | `grok-4.6` |
+| Muse（OpenCode 提供） | `opencode` | `opencode-go/muse-spark-1.2-contributor` |
 
-`arena cross-judge` 角色在这四类之外：选择任何与父代供应商不同的代理即可。
+示例：`ORCA orchestration worker-start --task <id> --worktree new-child --agent cursor --json`。需覆盖默认值或指定推理强度时，再显式附加 `--model` 与 `--effort`（`--effort` 以 `--model` 为前提），且仅作用于新建 agent 终端。`Muse` 家族不支持启动时透传 `--model`，其值始终以 `opencode.json` 为准。回执中的 `launch.requested` 与 `launch.effective` 为绑定是否生效的权威记录，启动后必须核读。
 
-## 选择代理
+## 角色分类矩阵
 
-- 判断类给 `claude_code`，逐字精确给 `codex`。Claude Code 直接走内置subagent工具派遣。
-- 判断类委派会决定你还没决定的事，所以它们的提示词需要带上 /poteto-mode [~/.agent/poteto-mode/SKILL.md]。其它工作不再嵌套执行。
-- 当 `grok` 和 `cursor` 都没有余量或不可用时，`open_code deepseek v4 pro` 是常驻兜底。但注意不要交给它前端任务，他也无法接受视觉输入。
+分类代表具体工作本身的工程特质，严格由该任务对代理的核心能力要求所决定。每个类别绑定一个默认模型，具名角色即该类别的判定锚点：
 
-三种都失败后，这是用户需要的信息。交回你尝试过的东西；第四次派遣同样的工作是浪费。
+
+| 类别                  | 具名角色与典型场景                                                                           | 默认模型                                                   | 核心能力诉求                     |
+| ------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------ | -------------------------- |
+| `Judgment`          | `why` 综合者、`how` 讲解者、`reflect` 判断/发散/综合，意图模糊或需要架构判断的任务                               | `claude-opus-5`                                        | 前沿深度推理与架构判断力               |
+| `Letter-precise`    | `bug-fix`、`perf-issue`、`hillclimb` 的实现委派，`reflect` 工具链构建、系统性全局排查、全局迁移重构、跨海量文件的确定性重写 | `Cursor Grok 4.6`                                      | 超长执行链路中不发生上下文漂移，严密精准遵循既定规程 |
+| `Bulk`              | `swarm` Worker、`why` 证据调查员、`how` 代码库探索者、琐碎编辑与局部功能开发                                 | `Muse Spark 1.2`                                       | 大体量高并发吞吐，聚焦速度              |
+| `Panel`             | `how` 架构批评者、`arena` Runner、`architect` Runner、`interrogate` 审查者                     | 每席不同模型家族：`claude-opus-5`／`Cursor Grok 4.6`／`Muse Spark 1.2` | 方案多样性与独立视角                 |
+| `arena cross-judge` | 竞技场方案跨模型独立裁判                                                                        | 从 pool 中选取与父代不同家族的一员                                   | 独立于主编排者的模型供应商              |
+
+
+## 角色→模型路由表
+
+```
+feature, refactoring: Muse Spark 1.2
+bug-fix: Cursor Grok 4.6
+perf-issue: Cursor Grok 4.6
+hillclimb: Cursor Grok 4.6
+judgment and prose: claude-opus-5
+hardest tasks: claude-opus-5
+how explorer: Muse Spark 1.2
+how explainer: claude-opus-5
+how critics: claude-opus-5, Cursor Grok 4.6, Muse Spark 1.2
+why investigators: Muse Spark 1.2
+why synthesizer: claude-opus-5
+reflect tooling: Cursor Grok 4.6
+reflect judgment, divergent, synthesizer: claude-opus-5
+arena runners: claude-opus-5, Cursor Grok 4.6, Muse Spark 1.2
+arena cross-judge pool: claude-opus-5, Cursor Grok 4.6, Muse Spark 1.2
+swarm workers: Muse Spark 1.2
+architect runners: claude-opus-5, Cursor Grok 4.6, Muse Spark 1.2
+interrogate reviewers: claude-opus-5, Cursor Grok 4.6, Muse Spark 1.2
+```
+
+## 可用性与换绑
+
+可用性以提供商为单位，不以单模型为单位。同一提供商的模型共享同一份额度，因此**同一家族内部不存在降级路径**。
+
+- **失效判定**：某家族的 worker 启动失败或首轮调用报额度错误，即判该提供商整体失效，并在本轮 Run 内将其名下所有绑定整体换绑，不逐任务重复试错。
+- **换绑方向**按类别的核心能力诉求就近选择可用家族：`Judgment`：Claude → Grok → Muse；`Letter-precise`：Grok → Claude → Muse；`Bulk`：Muse → Grok → Claude。换绑后在回复中注明原定家族与失效原因。
+- **Panel 席位**取可用家族的交集。仅剩一个家族可用时收敛为单席，并如实报告多样性已丧失。
+- **arena cross-judge** 从可用家族中排除父代家族后选取。若结果为空，裁判环节停摆并上报，不得以同家族裁判充数。
+- 评审席列表长度即并发席位数，每席绑定一个不同的模型家族，禁止以同家族重复席位凑数。
+- 意图模糊与"最难任务"两类条目优先按 `Judgment` 处理；仅当工作是被精确限定的执行序列时才落回 `Letter-precise`。

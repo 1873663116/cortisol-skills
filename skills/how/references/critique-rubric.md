@@ -1,58 +1,59 @@
 # Architectural Critique Rubric
 
-Review through whichever of these lenses are relevant. Not every lens applies to every subsystem.
+从以下与当前子系统密切相关的核心视角展开深度审视。并非每个视角都适用于所有子系统，请根据实际场景灵活选取。
 
-## Abstraction Fit
+## Abstraction Integrity
 
-Are the abstractions pulling their weight?
+系统中的各个抽象是否真正配得上它所占据的代码空间与心智成本？
 
-- Does each abstraction represent a real concept, or is it an indirection layer "in case we need it"?
-- Are the boundaries in the right place? Do they separate things that change independently?
-- Is there accidental coupling where components share implementation details they shouldn't need to know about?
-- Is business logic entangled with framework wiring, or cleanly separated?
+- 每个核心抽象是否精准对应着真实存在的业务领域概念，还是仅仅是为了“以防未来可能用到”而凭空生造的过度设计？
+- 模块边界是否划分在真正合理的接缝处？它们是否成功隔离了那些本应各自独立演进的核心变动点？
+- 是否存在意料之外的隐式耦合——即组件之间暗中共享了本不应向外泄漏的内部实现细节？
+- 核心业务逻辑与外部框架的生命周期接线是否做到了彻底解耦与物理分离？
 
-Over-abstraction is as much a problem as under-abstraction. A flat, simple design is fine when the domain is simple.
+过度抽象与抽象不足同样有害。在领域逻辑平实直白的场景下，简单清晰的扁平代码远胜过形式主义的复杂分层。
 
-## Data Model
+## Data Model Fit
 
-Do the data structures fit the actual usage patterns?
+底层数据结构的设计是否与实际的高频业务数据访问模式深度契合？
 
-- Are the data models designed for how data is actually accessed, or for how it was conceptually modeled?
-- Are there impedance mismatches, places where code constantly reshapes data because the model doesn't match the access pattern?
-- Are types honest? Do they represent what data actually looks like at runtime, or claim more structure than exists?
+- 数据模型是依据数据在运行时的真实访问与检索路径精心设计的，还是仅凭概念上的直觉机械照搬建模的？
+- 是否存在严重的阻抗失配（Impedance mismatch）——即代码各处不得不频繁重塑、转换数据形态以勉强适应别扭的数据结构？
+- 强类型定义是否完全忠实客观？它们表达的是运行时数据的真实形态，还是自作聪明地宣称了比实际更多的结构假象？
 
 ## Boundary Discipline
 
-Are system boundaries clean and well-placed?
+系统入口边界是否构筑严密、边界位置是否恰当？
 
-- Is validation concentrated at entry points, or scattered through internal code?
-- Are errors handled at boundaries and propagated cleanly, or caught and re-thrown at every layer?
-- Does data cross boundaries in well-typed shapes, or as bags of optional fields?
-- Could this subsystem be tested in isolation, or does it require the entire system to be running?
+- 输入校验是集中在入口边界处一次性完成，还是混乱地散落在深层业务逻辑内部？
+- 运行时异常是在边界处统一拦截并结构化向上传递，还是在每一层都被滥用捕获并盲目抛出？
+- 数据跨越系统边界时是否保持了清晰的强类型约束，还是退化成了一堆松散模糊的可选字段？
+- 该子系统是否具备在脱离庞大宿主环境时进行独立纯内存单元测试的架构解耦能力？
 
 ## Evolution Readiness
 
-How well will this architecture handle likely changes?
+面对未来可预期的业务变化，当前这套架构能否平滑支撑演进？
 
-- If the most probable next requirement landed tomorrow, how much would change? "One file" or "everything"?
-- Are there hardcoded assumptions that would need to be relaxed?
-- Is the design bolted-on (integrated as an afterthought) or integrated (looks like it was always part of the plan)?
-- Are legacy paths preserved for compatibility that no one depends on?
+- 若最可能发生的新业务需求在明天落地，需要改动多少代码？是一处高内聚的改动，还是引发全局多处的“牵一发而动全身”？
+- 代码中是否存在人为写死的死板假设，导致未来扩展时必须全盘重构？
+- 当前设计是浑然天成的内生架构，还是在历史版本上不断生硬打补丁外挂出来的产物？
+- 系统中是否存在为兼顾历史过渡而遗留、现实中早已无任何真实依赖的废弃双轨链路？
 
-Don't penalize for not handling hypothetical changes. Focus on changes plausible given the codebase's trajectory.
+切勿脱离实际为凭空臆想的极端边缘需求扣分；重点关注在该代码库实际演进轨道上极大概率发生的高频变化。
 
 ## Complexity vs. Value
 
-Is the complexity budget spent wisely?
+系统所消耗的复杂度预算，是否换来了等价值的工程回报？
 
-- Is complexity concentrated in the parts that need it (core logic, tricky invariants) or in accidental places (boilerplate, unnecessary indirection, configuration)?
-- Are there simpler ways to achieve the same behavior?
-- Does every component earn its existence, or are there vestigial pieces from an earlier design?
+- 复杂度是否精准倾注在真正需要它的核心业务逻辑与核心不变量上，还是大量白白耗费在样板代码、无意义的中间层与繁琐配置上？
+- 是否存在能够以显著更简单、更少活动部件达成完全相同业务行为的架构解法？
+- 系统中的每个组件是否都有不可替代的清晰使命，还是仅仅残留着上一代架构演进时遗留的退化残骸？
 
 ## Consistency
 
-Does this subsystem follow the patterns established elsewhere in the codebase?
+该子系统是否遵循了代码库其他模块业已沉淀的成熟设计模式？
 
-- Are similar problems solved the same way here as elsewhere, or does this area invent its own patterns?
-- If the patterns differ, is there a good reason, or did it just evolve independently?
-- Inconsistency isn't automatically bad. But unexplained inconsistency is a maintenance burden.
+- 相似的工程问题在此处与在代码库其他区域的解法是否保持一致，还是该模块盲目自创了一套私有模式？
+- 若确实采用了不同的模式，是否存在不可替代的正当技术理由，还是仅仅由于不同时期的开发者各自随意演化所致？
+
+差异化本身并非原罪，但缺乏合理解释的混乱不一致将给整个团队带来沉重的长期维护负担。

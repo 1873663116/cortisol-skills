@@ -1,83 +1,81 @@
 ---
 name: architect
-description: "Sketch types, signatures, and module structure before code, then stay in the loop while implementation fills in. Use for /architect, 'architect this', 'design this', or non-trivial work where jumping to code would lock in the wrong shape."
+description: "在动手编写具体实现代码前，先明确核心类型、函数签名与模块边界拓扑，并在编码过程中持续对照校准。适用于 /architect、“architect this”、“design this”，或任何若直接上手编码极易锁死错误数据形态的非简单架构任务。"
 disable-model-invocation: true
 ---
 
-# Architect
+# 架构设计
 
-Design before implementing. Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across multiple model perspectives, then fill in code against the chosen sketch. If implementation proves the sketch wrong, throw it out and redesign.
+先严密设计，再动手实现。通过声明强类型定义、函数签名、类与接口形态，并配合 `not implemented` 的空占位与关键伪代码清晰勾勒系统边界。综合多个高阶模型的独立架构视角，选定最优底稿后精准填补实现代码。若在编码过程中证明最初的设计存在根本性设计缺陷，果断推倒重新设计。
 
-## Start
+## 启动准备
 
-Open a todolist with one entry per phase before starting. Autonomous mode without checkpoints needs the list to show phase position and keep phases from silently disappearing.
+在开展任何工作前，先建立清晰的 todolist，每个阶段对应一项。在自主执行模式下，此清单能够直观展示当前执行阶段，防止关键步骤被意外遗漏：
 
-1. Ground
-2. Sketch
-3. Agree
-4. Implement
-5. Scrap
+1. 建立真实上下文
+2. 架构方案探索
+3. 人工对齐确认
+4. 基于草图编码实现
+5. 架构失真时果断重构
 
-## Phase A: Ground the problem
+## Phase A: 建立真实上下文
 
-Build a real mental model of every system the new code touches. Run the **how** skill over the relevant subsystems. Critique mode if existing structure is the constraint or the design must push back on it.
+针对新代码即将触及的每一个相关子系统，建立起真实、准确的运行时心智模型。对强关联的子系统调用 **how** 技能。若既有系统的架构约束构成了不可逾越的边界，或本次设计的目标正是推翻该既有结构，则以批评模式运行。
 
-Naming a file isn't grounding. Produce the traced model `how` prescribes. If the design redefines ownership or layering, also run the **why** skill on the existing shape so the rationale becomes a constraint, not a guess.
+仅仅在草图中提及几个文件名绝不代表摸清了系统脉络，必须产出 **how** 规范所要求的情境化系统调用与状态流转模型。若新设计重新调整了模块所有权或系统分层，还须对既有形态调用 **why** 技能，使最初的历史设计理由转化为当前明确的系统约束，而非凭空臆测。
 
-Skip Phase A only when the work is genuinely greenfield with no surrounding system to integrate.
+仅当任务属于完全绿地开发、周围没有任何需要对接耦合的既有系统时，方可跳过 Phase A。
 
-## Phase B: Sketch
+## Phase B: 架构方案探索
 
-Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt. Each candidate produces a design package shaped per `references/rationale-template.md`: the caller's usage written first, then the type sketch, function signatures, module map, and prose rationale derived from it.
+携带设计任务目标与 Phase A 建立的上下文产物，调用 **arena** 技能开展并发方案比选。将 `references/runner-prompt.md` 作为各个 Runner 的基础 Prompt 传入。每个候选方案均须输出一份完整的设计包，结构严格遵循 `references/rationale-template.md`：优先书写调用方的实际消费示例，随后推导核心类型草图、函数签名、模块拓扑图，以及支撑该架构的技术决策理由。
 
-Use the `Panel` class from the **dispatch** skill's role table.
+在模型调度上选用 **dispatch** 技能角色表中的 `Panel` 类别。
 
-Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the **exhaust-the-design-space** principle skill made concrete. Whole-shape alternatives, not point fixes inside one shape.
+坚持“独立设计两遍”准则：在执行综合裁决前，必须至少获得两套在结构上截然不同、具备鲜明主张的候选方案，即便第一个方案看起来已经相当不错。此即[穷尽设计空间](../principle-exhaust-the-design-space/SKILL.md)原则的具体落地。我们需要的是整体宏观形态上的真正替代方案，而非在同一个骨架内的局部修补。
 
-Screen every candidate against [`references/design-red-flags.md`](references/design-red-flags.md) before synthesis. Reject or revise shallow modules, information leakage, temporal decomposition, and pass-through methods.
+在综合裁决前，对照 [`references/design-red-flags.md`](references/design-red-flags.md) 严格筛查每一个候选方案。针对浅模块、信息泄漏、时序流水线分解以及无意义的透传转发方法，坚决予以驳回或修正。
 
-Compare viable candidates on interface depth. Prefer the design that hides more complexity behind a smaller, simpler public surface. A rich interface can keep call chains short by concentrating capability instead of scattering it across layers.
+重点在“接口深度”维度上对比候选方案：优先选择将更多业务复杂度优雅封装在精简、自解释公开接口背后的设计（深模块）。高内聚的丰富接口能够将核心能力高度收拢，避免复杂度向各调用层随意扩散，从而有效保持调用链的扁平紧凑。
 
-Arena returns one synthesized design package. The synthesis decision populates the rationale's "Synthesis decision" section.
+Arena 最终返回一份综合提炼后的架构设计包。将最终的综合决策与裁决理由完整填入理由文档中的 "Synthesis decision" 章节。
 
-## Phase C: Agree (opt-in)
+## Phase C: 人工对齐确认（可选）
 
-Default: proceed directly to implementation with the synthesized design. No human checkpoint.
+默认情况下，直接携带综合后的架构设计方案进入具体编码实现阶段，无需人为设置阻塞性确认卡点。
 
-Opt in to a checkpoint when the invoker explicitly asks: "/architect with checkpoint," "stop and show me before implementing," or similar. Then surface the synthesized design and pause for sign-off.
+仅当调用方显式要求设置人工检查点时（如输入“/architect with checkpoint”、“stop and show me before implementing”等指令），才在此时暂停并将综合后的设计完整呈现给用户，等待用户明确签字确认。
 
-The synthesis can ship as its own commit either way. That's the "scaffold first" mode of the **foundational-thinking** principle skill; subsequent commits read as filling in bodies against a stable contract. Planned and scoped breakage during fill-in is fine, per the **outcome-oriented-execution** principle skill. For adversarial pressure on the design before implementing, run the **interrogate** skill on the synthesized sketch.
+无论采用何种模式，综合后的架构骨架（纯类型定义与接口签名）均可作为独立的 Git commit 率先落地。这正是[底层先导思维](../principle-foundational-thinking/SKILL.md)中“基础设施脚手架优先”的最佳实践：后续的提交序列读起来就像是在一份稳定强健的契约上逐步填补函数体实现。在实现过程中出现受控、有计划的局部破坏是完全允许的（遵循[结果导向执行](../principle-outcome-oriented-execution/SKILL.md)原则）。若希望在编码前进一步对架构施加极限压力测试，可对综合后的草图调用 **interrogate** 技能执行对抗式审查。
 
-If the human pushes back on the shape (in a checkpoint or after the fact), treat that as Phase A evidence. Re-ground and re-run Phase B before writing more code.
+若人类工程师对该架构形态提出实质性异议（无论是在检查点还是事后），一律将该反馈视为 Phase A 的关键约束输入：重新摸清问题脉络并重跑 Phase B，坚决不在存疑的架构上盲目编写更多实现代码。
 
-## Phase D: Implement against the sketch
+## Phase D: 基于架构草图实施编码
 
-Replace `not implemented` bodies with code, pseudocode with logic. The synthesized sketch is the contract.
+将 `not implemented` 占位函数体替换为真实的业务逻辑，将伪代码落地为确定性代码实现。综合后的架构草图即是不可动摇的契约标准。
 
-Deviations from the sketch are signal worth surfacing, not friction to absorb silently. If a function needs a parameter the sketch didn't anticipate, ask whether the sketch was wrong, the requirement was missed, or the implementation is overreaching. Surface it; don't bolt it on.
+在编码过程中偏离初始草图是一个需要主动摆上台面坦诚审视的重要信号，绝不能将其作为无谓的摩擦悄无声息地掩盖过去。若某个函数在实现时发现必须追加一个草图未曾预料的参数，必须深入查明：究竟是草图模型遗漏了边界、业务需求发生了未捕获的漂移，还是当前的实现方式发生了越界侵入？坦诚呈现并厘清根因，严禁强行硬塞。
 
-## Phase E: Scrap when the architecture is wrong
+## Phase E: 架构失真时果断推倒重来
 
-If implementation keeps producing friction the sketch can't absorb, throw the sketch out. Don't bolt fixes onto a wrong design, per the **redesign-from-first-principles** and **fix-root-causes** principle skills.
+若在编码实现过程中不断产生既有草图无法自然吸收的严重结构摩擦，必须果断将当前草图废弃。坚决禁止在一个存在根本缺陷的设计上修修补补（遵循[第一性原理重构](../principle-redesign-from-first-principles/SKILL.md)与[直击根本原因](../principle-fix-root-causes/SKILL.md)原则）。
 
-The signal is a *pattern*, not single instances. Tells:
+判断架构失真的核心在于识别系统性的**设计模式缺陷**，而非偶发的单点编码问题。典型危险信号包括：
+- 相似形态的复杂绕行代码在互不相关的模块中反复滋生。
+- 面对多个互不相关的业务边界情况，每个都必须通过特殊的特判分支勉强支撑。
+- 强类型系统被迫引入大量逃生舱才能勉强通过编译（如滥用 `any`、不安全的类型断言、充斥大量理论上必有值但声明为可选的松散字段）。
+- 架构草图原本声明状态为非共享，而在实现时各处代码却下意识地频繁产生“我们需要加把锁”的并发竞争冲动。
+- 外部调用方必须透彻了解底层抽象的内部实现机制后才能勉强正确使用。
+- 在编码实现过程中，连续出现两次及以上相同性质且彼此独立的 Phase D 偏离。坦诚呈现偏离属于 Phase D 的日常职责，而偏离反复出现并形成共性规律则是触发 Phase E 的硬性指标。
 
-- The same shape of workaround appearing repeatedly across unrelated code.
-- Multiple unrelated edge cases that all need special-case branches.
-- Types that need escape hatches (`any`, casts, optional fields always set in practice) to compile.
-- The "we need a lock" reflex when the sketch said the state wasn't shared.
-- Callers having to know the abstraction's internal rules to use it.
-- Two or more independent Phase D deviations of the same shape across the implementation. Surfacing deviations is Phase D's job; a repeated pattern of them is Phase E's trigger.
+运用专业的工程判断力：少数几个边界情况绝不足以判处整个架构的死刑。某些复杂的业务领域其本质复杂度本就很高，数据本身的复杂度绝不等于架构设计的复杂度。触发推倒重来的决定性信号是**相同性质的架构摩擦在多处反复出现**，而非遇到了个别棘手的业务特例。
 
-Use judgment. A few edge cases don't condemn an architecture. Some problems are legitimately complex; complexity in the data is not complexity in the design. The rewrite signal is repeated friction of the same shape, not single hard cases.
+当决定推倒重来时：
+1. 对当前已写出的代码部分重新运行 **how** 技能，将编码试错过程中获得的宝贵教训转化为新设计的确定性输入，而非仅凭主观直觉。
+2. 将最新明确的硬性约束作为系统第一天起就存在的前提，执行第一性原理重构。
+3. 贯彻[先做减法再做加法](../principle-subtract-before-you-add/SKILL.md)原则，新草图在重新演进前，在概念规模上应当比旧草图更加精炼收敛。
+4. 返回 Phase B 重新调度 Arena 展开方案比选。
 
-When you scrap:
+## 产出规范
 
-1. Re-run the **how** skill over what's been built. The implementation lessons enter the new design as inputs, not vibes.
-2. Redesign as if the new constraints had been day-one assumptions, per redesign-from-first-principles.
-3. Subtract before adding, per the **subtract-before-you-add** principle skill. The new sketch should be smaller than the old one before it grows.
-4. Return to Phase B and re-run arena.
-
-## Outputs
-
-The caller's usage is written first and the type sketch derived from it. One file with new types and signatures for small changes; module map plus type definitions for larger work. The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision.
+优先书写调用方的实际消费示例，核心类型与接口定义均由消费示例严格推导而来。小规模改动使用单文件承载新类型与函数签名；大型复杂任务输出清晰的模块拓扑图与强类型定义分册。同时随附交付一份完备的架构理由文档，格式严格遵循 `references/rationale-template.md`，完整包含消费示例草图与最终的综合裁决依据。

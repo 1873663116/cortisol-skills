@@ -1,44 +1,44 @@
 ---
 name: tdd-bug-fix
-description: "Use only when the user explicitly asks for TDD, a failing test, or a regression test, OR when the bug has an obvious cheap local test target. Skip when the test path is unclear, expensive, integration-heavy, or not requested."
+description: "仅在用户显式要求使用 TDD、编写红灯失败测试或回归测试时使用，或当缺陷具备明确且低成本的本地单测目标时使用。若测试路径模糊、成本过高、重度依赖外部集成或用户未提出要求，应果断跳过。"
 disable-model-invocation: true
 ---
 
 # TDD Bug Fix
 
-When fixing a bug with a clear, cheap test path, make the broken behavior executable before changing production code. The goal is a focused regression test that fails before the fix and passes after it.
+在修复具备明确且低成本测试路径的缺陷时，必须在修改生产代码之前，先将异常行为固化为可执行的测试。目标是构建一个精准聚焦的回归测试：在修复前稳定红灯（失败），在修复后转为绿灯（通过）。
 
-Do not force a test when it would be impractical. If the available test would require broad harness setup, brittle mocks, slow end-to-end infrastructure, production-only state, vague reproduction steps, or large unrelated fixture churn, skip adding a new test and use the closest useful verification instead.
+当编写自动化测试不切实际时，切勿强行套用。如果可用的测试需要大费周章搭建环境工装、依赖脆弱的 Mock、涉及缓慢的端到端基础设施、需要仅在生产环境存在的状态、复现步骤模糊、或会导致大量无关测试资产的震荡修改，则果断放弃新增测试，转而采用最贴近、最实用的可执行验证手段。
 
-## Workflow
+## 标准工作流
 
-1. **Understand the bug.** Identify the intended behavior, current behavior, affected path, and smallest observable reproduction.
-2. **Choose the narrowest executable check.** Prefer the closest unit, component, integration, or regression test already used for that codepath. If no practical test path is obvious, do not create one from scratch just to satisfy the workflow.
-3. **Write the failing test first.** Add the smallest focused test that would have caught the bug. The test should encode intended behavior, not mirror the current implementation.
-4. **Run the new test before fixing.** Confirm it fails for the intended reason. If it passes or fails for an unrelated reason, correct the test or reproduction before editing the implementation.
-5. **Fix the bug.** Make the smallest production change that satisfies the intended behavior while preserving nearby contracts.
-6. **Rerun the regression test.** Confirm the test now passes.
-7. **Run nearby validation.** Run relevant adjacent tests, type checks, lint, or scenario checks when the change has broader risk.
+1. **理解缺陷机理**：明确预期的正确行为、当前的异常表现、受影响的代码路径，并提炼出最小可复现用例。
+2. **挑选最窄的可执行检查**：优先复用该代码路径既有的单元测试、组件测试、集成测试或回归测试。若没有显而易见的实用测试路径，严禁单纯为了迎合流程而凭空硬造一套测试基础设施。
+3. **先写出红灯失败测试**：新增能精准捕获该缺陷的最小测试用例。测试应固化预期的业务行为契约，而非照抄当前的错误实现。
+4. **在修复代码前运行该测试**：确认测试确实因为预期的原因红灯报错。若测试直接通过或因为无关原因报错，必须在修改生产代码前修正测试或复现逻辑。
+5. **实施缺陷修复**：做出满足预期行为的最小生产代码改动，同时严格保护周边的接口契约。
+6. **重新运行回归测试**：确认测试已成功转为绿灯通过。
+7. **执行周边连带校验**：当改动存在外溢风险时，运行相关的相邻测试用例、类型检查、代码规范检查（Lint）或场景校验。
 
-## If a Failing Test Is Impractical
+## 若编写红灯测试不切实际
 
-Do not silently skip the regression step. Before fixing, explicitly explain why a failing test is impossible or not worth the cost, then choose the closest executable regression check available. Examples include a targeted script, manual reproduction command, browser automation, snapshot comparison, log assertion, or focused integration check.
+切勿无声无息地跳过回归验证步骤。在动手修复前，显式向用户说明为何无法编写失败测试或为何成本过高，并挑选当前最接近的可执行回归手段。例如：针对性复现脚本、手动复现命令、浏览器自动化操作、快照对比、日志断言或聚焦的集成检查。
 
-Prefer no new test over a bad test. A bad test is one that mostly tests mocks, encodes current implementation details, depends on timing or unrelated global state, needs expensive infrastructure for a small fix, or would be deleted immediately after proving the fix.
+宁可不加新测试，也绝不写劣质测试。劣质测试的典型特征包括：主要在测试 Mock 对象本身、过度绑定当前内部实现细节、依赖脆弱的时序或全局状态、为了极小的修复引入庞大沉重的基建设施，或者在证明修复后几乎立即会被废弃删除。
 
-## Guardrails
+## 安全护栏
 
-- Do not change tests merely to match a wrong implementation.
-- Do not weaken existing assertions unless the expected behavior has genuinely changed and the reason is clear.
-- Keep the regression test focused on the bug; avoid broad fixture churn or unrelated coverage expansion.
-- Do not add tests when the practical signal is weak; use manual or scripted verification and say why.
-- If the bug is flaky, make the test deterministic where possible and document the signal being locked down.
-- If the bug exposes a broader class of failures, first land the focused regression path, then consider additional sibling coverage.
+- 严禁为了迁就错误的实现而篡改既有测试断言。
+- 除非预期的业务行为契约确实发生了根本变更且原因充分明确，否则严禁放宽既有的断言校验。
+- 回归测试必须高度聚焦于当前缺陷本身，避免引发大规模测试夹具震荡或不相关的测试范围膨胀。
+- 当实际收益信号微弱时，不要强行堆砌测试；采用手动或脚本化验证并清晰说明理由。
+- 若缺陷具有偶发性（Flaky），尽可能消除不确定性使其可确定复现，并记录锁定的信号特征。
+- 若该缺陷暴露了一整类更广泛的系统失效，先将当前聚焦的回归修复落地，随后再评估是否扩充周边的用例覆盖。
 
-## Final Response
+## 最终答复规范
 
-Report the evidence, not just the outcome:
+不仅汇报最终结果，更要如实呈现确凿的验证凭证：
 
-- Name the failing-before test or executable check and the failure it produced.
-- Name the passing-after test run and any nearby validation performed.
-- If failing-before evidence could not be demonstrated, state why and describe the closest regression check used instead.
+- 明确指明修复前的红灯测试或可执行检查名称，以及其产生的具体报错信息。
+- 明确指明修复后的绿灯测试运行结果，以及执行的任何周边连带校验。
+- 若未能提供修复前的红灯证据，说明客观原因并详述替代采用的最贴近的可执行回归检查。

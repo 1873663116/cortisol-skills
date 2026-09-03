@@ -1,77 +1,73 @@
 ---
 name: reflect
-description: Spawn three parallel review subagents over the active transcript, surface learnings, and route each to a concrete edit on an existing skill. Use when the user says reflect.
+description: "跨当前活跃会话记录并发派发三个独立视角的审查子 Agent，深度挖掘可沉淀的工程经验，并精准路由转化为对既有技能的确定性修改。当用户输入 reflect 或 /reflect 时使用。"
 disable-model-invocation: true
 ---
 
-# Reflect
+# 会话反思与技能沉淀（Reflect）
 
-Mine the current conversation for durable learnings, then route them into skill edits.
+深度挖掘当前会话中沉淀出的长效工程经验，并将其精准路由沉淀为对具体技能（Skill）的确定性更新与加固。
 
-## When to invoke
+## 适用触发时机
 
-- The user said "reflect" or "/reflect".
-- A complex task (5+ tool calls) just landed cleanly and the recipe is worth keeping.
-- The agent hit dead ends, found the working path, and the path generalizes.
-- The user corrected the agent's approach mid-task.
-- A non-trivial workflow emerged that isn't captured anywhere.
+- 用户显式输入“reflect”或“/reflect”。
+- 刚干净利落地交付了一项复杂任务（包含 5 次以上工具交互），其解决路径与工程配方极具复用沉淀价值。
+- Agent 在排查中曾踩入死胡同、最终找到了稳定可行的正确路径，且该解法具备通用性。
+- 用户在任务执行中途对 Agent 的解题思路或工程方法进行了关键纠偏。
+- 在任务中探索出了一套此前未被任何技能覆盖的非平凡工作流。
 
-Skip when the conversation is trivial, off-topic, or already covered by an existing skill the parent followed correctly. One-offs are not learnings.
+**跳过场景**：会话内容极其琐碎简单、偏离技术主题、或相关领域早已被既有技能完美覆盖且当前 Agent 已经完全严格遵守。偶发的一次性特例不属于应沉淀的长效经验。
 
-## Process
+## 执行流程
 
-### 1. Locate the active transcript
+### 1. 定位当前会话的历史记录文件
 
-The parent finds its own transcript file before fanning out. Claude Code stores workspace transcripts at `~/.claude/projects/<slug>/<uuid>.jsonl`. Use only the active workspace's `<slug>` directory. Do not glob across `~/.claude/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects.
+主编排父代在并发派发前，率先在本地定位当前会话的物理记录文件。本地会话统一保存在 `~/.claude/projects/<slug>/<uuid>.jsonl`。严格限定在当前工作区对应的 `<slug>` 目录下检索，严禁使用通配符 `~/.claude/projects/*/` 以免跨工作区越界读取其他私有项目的历史记录。
 
 ```bash
 ls -t ~/.claude/projects/<slug>/*.jsonl 2>/dev/null | head -10
 ```
 
-Derive `<slug>` from the absolute workspace path by encoding each `/` as `-`; Claude Code also encodes the leading `.` of a hidden path component as `-`. Keep the leading hyphen produced by the root slash. The confirmed directory for `/Users/xiongzhipeng/.agents` is `~/.claude/projects/-Users-xiongzhipeng--agents/`. The local layout has no `agent-transcripts/` level and no per-UUID directory.
+`<slug>` 由工作区绝对路径编码生成（将 `/` 替换为 `-`；开头的根斜杠保留为前导 `-`）。当前工作区 `/Users/xiongzhipeng/.agents` 对应的标准目录为 `~/.claude/projects/-Users-xiongzhipeng--agents/`。
 
-For each candidate, scan from the start to the first entry whose `type` is `user`, then check that `message.content[0].text` contains the conversation's opening user prompt. Take the matching path. If no path resolves, write a tight digest of the session and pass that instead.
+针对检索出的候选文件，从开头快速扫描至首个 `type` 为 `user` 的事件，核对 `message.content[0].text` 是否精准包含当前会话最初的用户 Prompt。若无法唯一定位文件路径，则提炼一份紧凑的会话摘要代入后续流程。
 
-### 2. Spawn three reviewers in parallel
+### 2. 并发派发三路独立审查者
 
-Read the **dispatch** skill. Call `delegate_to_agent` three times before collecting any result, using the agent types assigned to the roles below and the workspace's absolute path as `working_dir`. Reviewers may need MCP access for context lookups. `delegate_to_agent` cannot grant MCP access or enforce read-only operation, so confirm each selected agent type exposes the needed MCPs and put `Do not write or modify files` in every task. The parent applies edits.
+查阅 **dispatch** 技能规范，并发派发三位审查者，分别承载互补的审视视角。审查者任务中必须显式注明 `Do not write or modify files`（只读审查，由主编排父代统一执行修改）：
 
-| Lens | Dispatch role | Prompt template |
+| 审视视角 | 调度角色 | 基础 Prompt 模板 |
 |---|---|---|
-| Judgment | `Judgment` class | `references/judgment-reviewer.md` |
-| Tooling | `reflect tooling` | `references/tooling-reviewer.md` |
-| Divergent | `Judgment` class | `references/divergent-reviewer.md` |
+| **判断力（Judgment）** | `Judgment` 类别 | `references/judgment-reviewer.md` |
+| **工具链（Tooling）** | `reflect tooling` 类别 | `references/tooling-reviewer.md` |
+| **发散与盲区（Divergent）** | `Judgment` 类别 | `references/divergent-reviewer.md` |
 
-Pass each template verbatim, substituting the transcript path or digest where marked. Keep each returned `task_id` and collect all three with `get_delegation_status`.
+将模板原样分发，并在对应占位符处填入会话记录文件的绝对路径或会话摘要。
 
-### 3. Synthesize
+### 3. 全局综合与置信度归类
 
-Read the **dispatch** skill and call `delegate_to_agent` using the agent type assigned to the `Judgment` class and the workspace's absolute path as `working_dir`. The synthesizer's quality check includes spot-verifying citations, so confirm that agent type exposes the needed MCPs. Put `Do not write or modify files` in the task. Use `references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. Keep the returned `task_id` and collect it with `get_delegation_status`. The synthesizer returns a structured Accepted / Rejected / Backlog list.
+查阅 **dispatch** 技能规范，选用其 `Judgment` 类别派发综合者 Agent。综合者任务中显式注明 `Do not write or modify files`。使用 `references/synthesizer.md` 模板，内联三位审查者的完整报告。综合者输出结构化的 **Accepted（采纳）/ Rejected（驳回）/ Backlog（待办）** 清单。
 
-### 4. Structural enforcement check
+### 4. 机制化固化前置校验（Structural enforcement check）
 
-Sanity-check the synthesizer's Accepted list. For any item that would be enforced more reliably by a lint rule, script, metadata flag, or runtime check, move it from Accepted to Backlog. The synthesizer already applies this criterion; this is a final pass before edits land. See the **encode-lessons-in-structure** principle skill.
+对综合者产出的 Accepted 采纳清单执行严格把关：凡是能够通过 Linter 静态规则、自动化脚本、元数据标记或运行时强断言更加可靠强制约束的事项，一律将其从 Accepted 移至 Backlog 机制待办池中（遵循[将教训沉淀进系统结构中](../principle-encode-lessons-in-structure/SKILL.md)原则）。
 
-### 5. Apply
+### 5. 人工确认与精准应用
 
-Before applying any Accepted edit, present the synthesizer's full Accepted/Rejected/Backlog output to the user and wait for explicit approval. The user picks which subset to apply and may redirect routings. Skill changes affect every future agent in the org; do not auto-apply.
+在正式改动任何技能文件前，将综合报告完整呈现给用户并**等待用户明确确认**。由用户最终勾选采纳子集并确认路由路径。技能规范会直接影响团队后续所有 Agent 的行为模式，严禁未经用户批准擅自自动应用。
 
-Backlog items file to whatever devex / backlog tracker your team uses automatically. Those are tracker submissions, not skill edits. Only the Accepted list waits for approval.
+针对经用户确认的 Accepted 采纳项，严格按其 Routing 字段执行落地：
+- **微小改动**（单行补充、语句打磨、陈旧事实修正）：由父代直接原地编辑。
+- **实质性扩充**（新增章节、新增模式表、超过 10 行的重大扩充）：严格应用 **writing-for-agents** 技能及其机制规范执行。
+- **微调触发描述（`tune description: <skill path>`）**：该技能已存在但在本会话中未能精准触发，应用 **writing-for-agents** 的上下文指针规则优化其 description。
+- **全新技能构建（`new skill via writing-for-agents: <kebab-name>`）**：严格遵循 **writing-for-agents** 规范构建标准技能结构。
 
-For each approved Accepted item, follow the Routing field exactly:
+若环境中配备了 `SKILL.md` 校验工具，在宣布完成前对所有触碰过的技能执行合规校验。
 
-- Trivial existing-skill edit (a one-line bullet, a tightened sentence, a stale fact corrected): parent does directly.
-- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): apply the **writing-for-agents** skill and its skill mechanics.
-- `tune description: <skill path>` (the skill exists but didn't trigger when it should have): apply the **writing-for-agents** context-pointer rules to the description.
-- `new skill via writing-for-agents: <kebab-name>`: apply the **writing-for-agents** skill and its skill mechanics. Do not invent the shape ad hoc.
+### 6. 最终精炼汇报
 
-If your environment ships a SKILL.md validator, run it on every touched skill before declaring done. Skip this step if it doesn't.
-
-### 6. Summarize for the user
-
-Short list, no preamble:
-
-- Edits applied: `<skill path>`. What changed, one line each.
-- New skills created: `<skill path>`. One line each (rare).
-- Backlog filed to the devex tracker: `<issue title>` (`<tags>`). One line each.
-- Dropped: one line per rejected finding + reason from the synthesizer.
+无前戏废话，直接输出清晰清单：
+- **已应用的技能更新**：`<skill path>`，单行精炼说明改动点。
+- **新建的技能**：`<skill path>`（罕见场景）。
+- **沉淀的机制待办**：`<issue title>` (`<tags>`)。
+- **已驳回的意见**：列出被否决的发现及其确凿技术理由。

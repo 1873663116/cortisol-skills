@@ -1,46 +1,49 @@
 ---
 name: swarm
-description: "Fan out N parallel workers, drain them, and return one report. Use for /swarm, 'swarm this', or parallel coverage, races, gauntlets, and exploration."
+description: "并发扇出 N 个并行执行 Worker、收集汇总其执行结果、并交付综合审计报告。用于 /swarm、“swarm this”、大规模并发覆盖、并行竞速探索、多阶段连续关卡与全局排查。"
 disable-model-invocation: true
 ---
 
-# Swarm
+# 群体并发任务协同（Swarm）
 
-Fan out N parallel local workers. They may cover separate slices, race the same brief, or mix both. The parent waits, aggregates, and returns one report.
+并发扇出 N 个并行的本地 Worker Agent。各个 Worker 可分别负责一个正交的数据/模块分片，亦可针对同一份任务要求展开并行竞速探索，或两者有机结合。主编排父代负责状态监控、结果收拢与深度汇总，最终交付一份结构化的综合审计报告。
 
-## Start
+## 启动准备
 
-Open a todolist with one entry per phase before launching anything.
+在派发任何 Worker 之前，建立清晰的待办事项清单（todolist），每个阶段对应一项：
 
-1. Frame
-2. Fan out
-3. Aggregate
-4. Report
+1. 明确目标与形态（Frame the swarm）
+2. 并发扇出执行（Fan out）
+3. 结果结构化收拢（Aggregate）
+4. 交付综合报告（Report）
 
-## Phase A: Frame
+## Phase A: 明确目标与形态（Frame the swarm）
 
-1. State the done predicate and the artifact or report the swarm must return.
-2. Choose the shape. Partition into slices, race N workers on identical briefs, or mix both. For a race or mixed shape, declare `first pass`, `rank all`, or `best-of` before spawning.
-3. Set N from the user or derive it from the shape. N is total workers, not the cloud concurrency limit.
-4. Read the **dispatch** skill and use its `Bulk` class. Override an arm only when its work needs another class. For an agent race, name each arm's agent type up front.
-5. Give each worker its own writable output when it writes. Use a worktree, branch, or `/tmp/swarm-<slug>/worker-<n>/`.
+1. **清晰定义完成准则**：明确规定本次 Swarm 必须最终交付的客观产物或综合分析报告。
+2. **选定协同形态**：
+   - **分片覆盖模式（Sharded）**：将总任务均匀切分为 N 个互不重叠的正交子任务。
+   - **并行竞速模式（Race）**：让 N 个 Worker 针对同一份任务规范独立并行探索；在派发前明确声明选择规则：`first pass`（首个通过即采纳）、`rank all`（全量评估排序）或 `best-of`（综合评选最优）。
+   - **混合模式（Hybrid）**：分片与局部竞速结合。
+3. **确定 Worker 规模 N**：由用户直接指定，或根据任务切片自然推导。N 代表 Worker 总数，而非云端并发限制。
+4. **选定模型类别**：查阅 **dispatch** 技能规范，选用其 `Bulk` 类别；唯有当某一路任务具有特殊的推理要求时，才单独指定对应类别。在竞速模式下，必须在一开始明确注明各路 Worker 分别采用何种 Agent 模型。
+5. **分配隔离的写入空间**：凡涉及写操作的 Worker，必须为其分配物理隔离的独立输出位置（优先使用 Git Worktree、专用独立分支，或 `/tmp/swarm-<slug>/worker-<n>/`）。
 
-## Phase B: Fan out
+## Phase B: 并发扇出执行（Fan out）
 
-Call `delegate_to_agent` for all N workers before collecting any result. Pass the selected `agent_type`, a standalone `task`, and an absolute `working_dir` for that worker. Keep every returned `task_id` and collect them with `get_delegation_status` until all workers finish. The calls are asynchronous by definition.
+并发派发全部 N 个 Worker，使其并行运转。每个 Worker 接收一份能够完全独立闭环完成的任务书。涉及写操作的 Worker 必须各自在独立的 worktree 中执行，确保彼此绝不发生并发写踩踏。
 
-The local delegate has no cloud environment or branch argument. When a worker must start from a non-default branch, prepare a separate worktree on that branch and pass its absolute path as `working_dir`.
+本地子 Agent 调度不依赖云端环境参数或动态分支参数。若某个 Worker 必须从非默认分支展开工作，率先在该分支上创建独立的 Worktree，并将其绝对物理路径作为 `working_dir` 传入任务。
 
-Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence.
+每份任务书必须具备完全的自包含性：明确阐述任务目标、执行范围、所属的具体分片或竞速轮次、闭环验证方法、以及必须报告的格式规范。Worker 最终统一返回 `PASS`、`ISSUES` 或 `BLOCKED` 标准裁决，并附带确凿证据。
 
-If a worker drops out, proceed with N-1 and note it.
+若个别 Worker 意外掉线或超时，按剩余的 N-1 个有效结果继续向下推进，并在报告中如实记录掉线情况。
 
-## Phase C: Aggregate
+## Phase C: 结果结构化收拢（Aggregate）
 
-Read the terminal results. For coverage, every required slice needs a result. For a race, apply the selection rule declared up front. Use first pass, rank all, or best-of. Do not paste raw worker dumps.
+读取并解析各路 Worker 交付的最终执行结果。针对分片覆盖型任务，核验所有必需的分片是否均已取得明确结果；针对竞速型任务，严格套用 Phase A 预先声明的选择规则（`first pass`、`rank all` 或 `best-of`）。严禁在主线程中无脑全量粘贴各个 Worker 的大段原始输出。
 
-Keep a compact result table, one-line evidenced issues, and explicit gaps or dropouts.
+整理出一张精炼紧凑的全局结果对照表，每项发现或问题单行呈现并附带直达证据指针，清晰标明执行缺口与异常掉线记录。
 
-## Phase D: Report
+## Phase D: 交付综合报告（Report）
 
-Return one consolidated in-chat report with the table, issue one-liners, gaps or dropouts, and the race rule when used.
+在当前会话中输出最终的结构化汇总报告，清晰包含：全局结果矩阵表、各项关键问题的单行技术说明、执行缺口与掉线异常说明，以及在竞速场景下所采纳的最优方案及其评选依据。

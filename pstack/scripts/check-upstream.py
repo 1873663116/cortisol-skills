@@ -34,11 +34,11 @@ PIN_FILE = os.path.join(ROOT, "UPSTREAM")
 # Upstream lays skills out under pstack/skills/<name>. This fork hoists them to
 # skills/<name> so every harness that scans a skills directory finds them, with
 # the exceptions below. Keep this table and PORT.md in step.
-RENAMED = {"tdd": "tdd-bug-fix"}
+RENAMED = {"tdd": "tdd-bug-fix", "poteto-mode": "tomato-mode"}
 NOT_INSTALLED = {"setup-pstack"}
 DELETED_PATHS = {
-    "skills/poteto-mode/playbooks/autopilot-stack.md",
-    "skills/poteto-mode/playbooks/orchestrate.md",
+    "skills/tomato-mode/playbooks/autopilot-stack.md",
+    "skills/tomato-mode/playbooks/orchestrate.md",
 }
 
 

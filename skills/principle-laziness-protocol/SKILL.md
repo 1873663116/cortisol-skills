@@ -1,18 +1,18 @@
 ---
 name: principle-laziness-protocol
-description: "Apply when refactoring, evaluating diff size, or tempted to add abstractions, layers, or signal threading. Bias toward deletion and the smallest change that solves the problem."
+description: "在进行代码重构、评估 diff 规模，或忍不住想要凭空堆砌抽象层、调用层级与数据透传时使用。坚持优先做减法，始终追求用最小的代码改动精准解决问题。"
 disable-model-invocation: true
 ---
 
-# Laziness Protocol
+# 极简工程原则（Laziness Protocol）
 
-Writing code is cheap for you, which makes over-engineering easy. Counter it by borrowing a human maintainer's fatigue. Aim for the most result with the least code and complexity.
+对 AI 而言生成大量代码成本极低，这极易诱发严重的过度设计（Over-engineering）。必须用人类代码维护者在阅读冗长代码时的疲惫感来有力对冲这种冲动。核心目标是：以最精炼的代码量与最低的系统复杂度，换取最大化的工程业务价值。
 
-- **Prefer deletion.** When asked to refactor or improve, look for removals before additions.
-- **Maintain a flat call hierarchy.** Avoid deep call chains. A rich interface that hides substantial work is not a deep call chain. If answering a question requires tracing through more than 3 files or layers, flatten it.
-- **Consolidate decisions.** Do not repeat the same choice in several places. Put it behind one source of truth and pass the result as a simple flag.
-- **Minimize the diff.** Make the smallest change that solves the problem. Fewer lines beat "elegant" boilerplate.
-- **Question the threading.** If a task asks you to pass a new signal through types, schemas, pipelines, or similar layers, stop and look for a more direct path.
-- **Sweat the small leaks.** Remove tiny pass-throughs, representation leaks, and duplicated choices before they spread. Small leaks compound into permanent coordination costs.
+- **优先做减法。** 面对重构或优化诉求时，首先寻找可以被物理删除的代码与无用逻辑，再考虑是否需要新增。
+- **保持扁平的调用层级。** 坚决避免冗长晦涩的调用链路。一个内部封装了大量实质逻辑的单一接口不属于深调用链；而如果弄懂一个简单问题需要连续追踪 3 个以上的文件或空转层级，必须果断将其压平消除。
+- **收拢技术决策。** 严禁在多处代码中重复进行相同的条件判断与选型。将其严格收拢在单一事实来源之后，并将判定结果以精炼的状态标记向下传递。
+- **极致压缩 Diff 规模。** 始终采用能够彻底解决问题的最小改动方案。精炼清晰的较少代码行数，远胜于形式主义、“看似优雅”的大段样板代码。
+- **质疑跨层透传。** 若某项任务迫使你将一个新参数或控制信号层层穿透（Prop drilling）多个类型、Schema 或中间流水线，立即停步，寻找更直接、内聚的架构交互路径。
+- **对微小设计泄漏零容忍。** 在微小的无用转发、表示层泄漏和重复判断扩散蔓延之前，果断就地清理。微小的设计破损会迅速累积成高昂的长期维护与协同成本。
 
-**Prime directive:** If a human developer would find the code exhausting to maintain, it is a bad solution. Be lazy. Stay simple.
+**最高工程准则：** 若人类工程师在后续维护这段代码时会感到心力交瘁、精疲力竭，那么无论它被吹嘘得多精妙，它都是一个极其糟糕的技术方案。保持克制，返璞归真。

@@ -1,33 +1,33 @@
 ---
 name: principle-prove-it-works
-description: "Apply after completing a task, before declaring done. Verify against the real artifact (run the feature, read the actual value, inspect the diff), not a proxy, self-report, or 'it compiles.'"
+description: "任务收尾、宣布完成前必须执行。针对真实产物与运行环境进行端到端闭环验证（运行实际功能、读取真实数值、检查完整 diff），严禁用代理指标、单方自述或“编译通过了”蒙混过关。"
 disable-model-invocation: true
 ---
 
-# Prove It Works
+# 用实际运行证明有效（Prove It Works）
 
-Verify every task output by checking the real thing directly. Do not infer from proxies, self-reports, or "it compiles."
+每一项工程任务的交付成果，都必须通过直接检验真实运行的系统产物来证明其有效性。严禁依赖代理指标、Agent 单方自述或仅凭“编译通过了”进行主观推断。
 
-**Why:** Unverified work has unknown correctness. Indirect verification (file mtimes, output freshness, agent self-reports, cached screenshots) feels cheaper than direct observation. Acting on a wrong inference costs far more than checking the source.
+**核心理由。** 未经实测闭环验证的工作，其正确性在逻辑上属于未知状态。通过间接指标（如文件修改时间戳、构建产物新鲜度、Agent 口头汇报、陈旧的本地截图等）进行推断表面上看似省事，但基于错误推断继续向下推进所带来的连锁灾难性修复成本，远高于在源头直接执行一次严密检查的代价。
 
-**Pattern:** After completing any task, ask: "how do I prove this actually works?"
+**实践规范：** 任何任务在宣布完成前，必须首先自问：我该如何确凿证明该产物在真实环境下确实有效？
 
-Check the real thing, not a proxy:
-- Check process liveness directly, not indirectly through derived state
-- Read the actual value, not a cached or derived representation
-- When verification fails, suspect the observation method before suspecting the system
+**检验真实产物，拒绝代理指标：**
+- 直接检查目标进程是否处于健康存活状态，而非通过派生状态间接揣测。
+- 直接读取并校验运行时的真实输出数值，而非读取缓存副本或派生数据结构。
+- 当验证未达预期时，先怀疑观察手段与测试工装本身的严密性，再怀疑系统实现。
 
-Code and features:
-1. Build it (necessary but not sufficient)
-2. Run it and exercise the actual feature path
-3. Check the full chain: does data flow from input to output?
-4. For integrations, test the full communication path end-to-end
+**代码与功能的四步验证链：**
+1. **构建成功**（必要前提，但绝非充分条件）。
+2. **实际运行**，完整走通真实的业务功能路径。
+3. **全链路端到端检查**，确认数据从输入端一路无损流转至最终输出端。
+4. **集成场景验证**，针对跨模块或跨服务集成，端到端测试完整的通信链路与边界表现。
 
-Delegation: trust artifacts, not self-reports.
-When verifying delegated work, inspect the actual output artifact (git diff, file contents, runtime behavior), not the delegate's summary. Agents report what they intended, not always what happened.
+**委派任务审查：信任真实产物，不信单方自述。**
+审查子 Agent 交付的工作时，必须直接检查其实际生成的客观产物（Git diff、实际生成的文件内容、真实运行时行为），而非轻信其总结陈词。Agent 汇报的往往只是其“打算做的事”，并不等同于“代码中实际发生的事”。
 
-## Script the check when you can
+## 凡可脚本化的验证均应固化为脚本
 
-The strongest proof is a deterministic script that re-runs the same comparison, not a one-time eyeball. Write the script, run it, and keep its output as an artifact a reviewer can re-run instead of trusting your word. A script comparing the old and new compiled output catches what a glance misses.
+最高置信度的证明是能够以确定性方式反复运行出一致对比结果的自动化验证脚本，而非单次手工肉眼确认。编写并运行验证脚本，将其结构化输出作为可验证的凭据留存，使后续评审者能够亲自重跑复现，无需盲目信任口头承诺。例如编写一个比对新旧编译产物字节级差异的脚本，能够精准捕获人工走读极易遗漏的细微漂移。
 
-Keep the artifact visible for the human. Commit it only for large or complex work where the trail has to be auditable later, like a big port or migration (the **show-me-your-work** skill). Most work just needs it visible, not committed.
+确保验证凭据清晰可见。仅在涉及高风险、大体量、后续需要可审计溯源的重大任务中（如大型框架迁移、系统级重构），才将凭据文件提交入库（结合 **show-me-your-work** 技能）；日常常规开发仅需确保凭据在当前会话中清晰可验即可。

@@ -1,50 +1,50 @@
 ---
 name: blast-radius
-description: "Find what a change could break somewhere else before it ships, beyond the diff, and prove the one fact it's safe because of by running real code instead of writing it up. Use for 'blast radius of X', 'what could this break', or reviewing a small diff you don't trust."
+description: "在改动发布前，超越 Diff 本身排查其可能引发其他地方破坏的影响面，并通过运行真实代码而非纯写分析报告来证明改动之所以安全的那个关键事实。用于“X 的影响面/爆炸半径”、“这会改坏什么”、或审查你不信任的小型 Diff。"
 disable-model-invocation: true
 ---
 
-# Blast radius
+# Blast Radius
 
-Find what a change breaks somewhere else, before it ships. Use for "blast radius of X", "what could this break", or reviewing a small diff you don't trust yet.
+在改动合并发布前，精准找出它可能在系统其他角落引发的连带破坏。用于“X 的影响面/爆炸半径”、“这会破坏什么”、或审查一份尚存疑虑的代码 Diff。
 
-Companion to `how` and `why`. `how` tells you what the code does. `why` tells you why it's shaped that way. Blast radius tells you what it breaks somewhere else.
+本技能是 `how` 与 `why` 的协同伴侣：`how` 告诉你代码做了什么，`why` 告诉你代码为何长成这样，而 `blast-radius` 告诉你它会在其他地方造成什么连锁破坏。
 
-Listing the callers is not the job. The agent can grep those in a second. The job is the breakage grep won't show you.
+单纯罗列调用方绝不是这项任务的核心——使用 Grep 工具马上就能搜出来。这项任务的真正核心，是挖出 Grep 静态检索无法呈现的潜在破坏。
 
-## Don't trust your own writeup
+## 绝不轻信未经代码验证的分析文字
 
-A blast-radius writeup that sounds right is worthless. It reads as convincing whether or not it's true, and that is the trap you are walking into. So don't hand back the writeup. Find the one or two facts the whole thing depends on and prove them by running code. Words are where you start, not what you ship.
+一篇听起来头头是道的分析报告没有任何实质价值。无论其真伪，纯文本往往读起来都极具说服力，而这正是最容易让人踩坑的思维陷阱。因此，不要只交付一篇主观分析作文。找出整项改动安全性所维系的那一到两个关键事实，并**通过实际运行真实代码来予以确凿证明**。文字只是探索的起点，绝非交付的终态。
 
-### How sure are you
+### 置信度阶梯
 
-For each fact the change's safety depends on, get it as far down this list as is cheap, and say where it stopped.
+对于改动安全性所依赖的每个关键事实，在成本可控的前提下，尽可能将其沿着下方阶梯向下推进，并明确标明最终停留在哪一层级：
 
-1. You said so. Worthless on its own.
-2. You pointed at the line. A real `file:line`, or the library's own source.
-3. You showed the bad case can't happen. You walked the failure step by step and it doesn't reach.
-4. You ran it. A script or test that calls the real code and fails loud if you're wrong.
-5. You reproduced it in the running app.
+1. **你口头主观断言**：完全不具备证明效力。
+2. **指出具体代码行**：给出了真实的 `文件:行号`，或第三方库的底层源码位置。
+3. **推导演绎异常路径无法触达**：逐级走读推演失败传播路径，证明其客观上无法成立。
+4. **亲手运行代码验证**：编写脚本或测试用例，真实调用相关代码，若假设错误则会立刻报错报错。
+5. **在运行中的真实应用中复现验证**。
 
-Any safety fact you can't get to step 4, say so out loud. Don't write it up as settled. Step 4 is usually one small script that imports the same library the app ships and calls the exact function you're worried about.
+凡是未能推进至第 4 层的安全性假设，必须显式公开说明，切勿当作已盖棺定论的事实汇报。推进到第 4 层通常只需要写一个极小的独立脚本，引入与项目完全一致的依赖库，直接调用你所担心的那一个确切函数。
 
-## Steps
+## 执行步骤
 
-1. Read the change. The diff, the symbols it adds, changes, and deletes, and what it now does differently, including the part the diff doesn't spell out. Use `why` step 2 to pull the PR and commits.
-2. Find the one fact it's safe because of. Most changes that look scary are safe because of a single fact, like "this call only drops already-dead cache entries and does nothing else". Find that fact. If it holds, most of the scary cases die at once. Spend your time here, not on a long list of maybes.
-3. Look where grep stops. Read the source of the library you call, and check its pinned version and any local patch. Work out when things run: microtasks, unmount and teardown, Solid versus React. Follow what a symbol search misses: the JSON an API returns, a DB column, a wire format, another language reading the same bytes, a feature flag, code three hops downstream.
-4. Be honest about each risk. Give it a real chance of happening and a real cost if it does. Keep the risks you confirmed; list the ones you checked and cleared separately. Same rules as `why`. Cite a real `file:line`, a search that finds nothing is still an answer, and never make up a caller or an API.
-5. Prove the one fact. Write a script or test that runs the real code, run it, and paste what happened. If you can't prove it cheaply, mark it unproven. Don't round up.
-6. For a big or wide change, run it as an `arena`. Ask several models the same question and merge the answers. Different models catch different real bugs.
+1. **走读改动本身**：审视 Diff、新增/修改/删除的符号，以及行为层面的实质变化，尤其是 Diff 未显式写明的隐性影响。利用 `why` 的第二步拉取关联 PR 与 Commit 记录。
+2. **找出确保改动安全的唯一关键事实**：绝大多数看似吓人的改动，其安全性往往维系于单一关键事实之上（例如“该调用只会丢弃已经失效的缓存条目，不会产生任何其他副作用”）。精准锁定该事实。只要该事实成立，绝大多数担忧的异常分支便会同时消解。把精力集中在此，而非罗列漫无边际的“可能”。
+3. **探查 Grep 覆盖不到的盲区**：通读所调用的外部库源码，核对锁定版本与本地 Patch；理清运行时的执行时机与生命周期（微任务队列、组件卸载与清理时机、响应式系统差异等）；追踪符号检索容易遗漏的隐式边界：API 返回的动态 JSON 载荷、数据库列定义、底层网络协议格式、其他语言读取同一份字节数据、Feature Flag、下游三层调用处的隐式假设等。
+4. **诚实评估每一项风险**：给出真实客观的发生概率，以及一旦发生时的实际故障成本。明确区分已确认的真实风险与经排查后已排除的疑点。恪守证据准则：引用真实 `文件:行号`；检索未果也是一种客观事实；严禁捏造调用方或接口。
+5. **对核心事实进行代码实证**：编写脚本或测试运行真实代码，亲手执行并贴出实际运行结果。若因客观原因无法低成本验证，明确标记为“unproven”，严禁盲目夸大结论。
+6. **面对重大或广泛改动，采用 `arena`**：向多个模型派发相同的问题并合并分析结果，不同模型往往能发现互补的真实缺陷。
 
-## What to hand back
+## 产出规范
 
-- **What it does.** What changed, including the part that isn't obvious.
-- **The one fact it's safe because of.** State it, say which step you got it to, and show the proof. If you couldn't prove it, write unproven.
-- **Risks.** Only the real ones. Each names how it breaks, the `file:line`, how likely and how bad, and how to check. Paste the proof for the ones that matter.
-- **Cleared.** What you checked and why it's fine.
-- **Before you merge.** The cheapest test or repro that catches the real bug, including the script you wrote.
+- **改动实质**：发生了什么实质变更，特别是那些不显眼的隐性变动。
+- **改动安全的唯一核心事实**：清晰陈述该事实，注明其已推进至置信度阶梯的哪一层，并附上运行验证凭证。若未能完成代码实证，直接标明 `未经验证`。
+- **真实风险清单**：仅列出确认成立的风险，逐一标明破坏机制、对应 `文件:行号`、发生概率与严重程度、以及排查方式，并附上关键风险的验证结果。
+- **已排除疑点**：记录已排查确认无虞的潜在疑点及判定理由。
+- **合并前建议**：能够捕获真实潜在问题的最低成本测试用例或复现方式（包括编写的验证脚本）。
 
-Write it through `unslop`, cite real code, and strip anything private before it goes anywhere public.
+全篇遵守 `unslop` 规范，引用真实代码，并在内容对外公开前脱敏所有私有数据。
 
-**Reply:** the writeup above, with the one safety fact either proven or marked unproven.
+**最终答复**：输出上述结构化分析，且核心安全事实必须附带明确的代码实证或标注为未经验证。

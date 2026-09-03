@@ -1,21 +1,21 @@
 ---
 name: principle-exhaust-the-design-space
-description: "Apply when facing a novel UI interaction or architectural decision with no precedent in the codebase. Build 2-3 competing prototypes and compare side by side before committing."
+description: "面对缺乏先例的全新 UI 交互设计或重大架构选型决策时使用。在动手前先构建 2 到 3 个相互竞争的独立原型并进行并排横向比选，再做最终定型。"
 disable-model-invocation: true
 ---
 
 # Exhaust the Design Space
 
-When a novel interaction or architectural decision has no established precedent, explore several concrete alternatives before implementation. Building the wrong thing costs more than exploring three options.
+当面对缺乏既有先例的全新交互设计或重大架构技术选型时，在正式落地生产代码前，必须先扎实探索并对比数个具体的备选技术方案。构建错误方案并在事后推倒重来的代价，远高于在前期并行探索三个备选项的成本。
 
-**The rule.** When the right answer is not obvious, build 2-3 competing prototypes or sketches. Compare them side by side. Only then commit. Design it twice is this rule by another name. A second flavor of the first shape does not count.
+**核心规则。** 当最优解并非显而易见时，构建 2 到 3 个相互竞争的原型（Prototype）或设计草图，将其并排进行客观优劣比选，随后方可敲定最终方案。“把方案独立设计两遍”阐述的正是同一条铁律；仅在首个方案上做微调修饰不属于真正的独立方案比选。
 
-**When it applies:**
-- Novel UI interactions (no prior art in the codebase)
-- Architectural choices with multiple viable approaches
-- Product design decisions where user experience depends on feel, not logic
+**适用场景：**
+- 全新的 UI 交互模式（代码库中尚无任何成熟先例可循）。
+- 存在多种截然不同技术路径的重大架构选型。
+- 用户体验高度取决于实际操作手感与流畅度、而非单纯依赖形式逻辑推导的产品设计决策。
 
-**When it doesn't:**
-- Mechanical implementation where the pattern is established
-- Bug fixes or refactors with a clear target state
-- Changes where constraints dictate a single viable approach
+**不适用场景：**
+- 架构模式已高度确立且只需机械套用的常规功能实现。
+- 目标终态与修复路径极其明确的日常 Bug 修复或局部重构。
+- 受客观物理或业务硬性约束限制，仅存在唯一定解的代码改动。

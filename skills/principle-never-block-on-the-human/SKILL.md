@@ -1,23 +1,23 @@
 ---
 name: principle-never-block-on-the-human
-description: "Apply when tempted to ask 'should I do X?' on reversible work. Proceed, present the result, let the human course-correct after the fact; reserve confirmation for irreversible actions."
+description: "在处理可逆工作且想要发问“我该做 X 吗？”时使用。直接果断推进，将具体结果呈现给人类，由人类在必要时做方向纠偏；将确认流程严格限定在不可逆破坏性操作上。"
 disable-model-invocation: true
 ---
 
-# Never Block on the Human
+# 可逆操作严禁阻塞等待人类（Never Block on the Human）
 
-The human supervises asynchronously. Agents must stay unblocked: make reasonable decisions, proceed, and let the human course-correct after the fact. Code is cheap. Waiting is expensive.
+人类监督本质上是异步进行的。Agent 必须保持非阻塞的高效推进：自主做出合理的技术决策、果断向前推进，并将具体结果呈现给人类以便其在必要时进行纠偏。生成代码的成本极低，而无谓等待人类确认的成本极高。
 
-**Why:** Every permission pause stalls the pipeline and makes the human the bottleneck. Since code changes are reversible and reviewable, a wrong decision usually costs less than blocking.
+**核心理由。** 每一次频繁征求许可的停顿都会导致自动化流水线彻底空转，使人类被迫成为整个流程的严重性能瓶颈。既然常规的代码改动具有完全的可逆性与可审查性，单次局部决策偏差的修正成本通常远低于全流程阻塞停滞的高昂代价。
 
-**Pattern:**
-- **Proceed, then present.** Do the work, show the result. Don't ask "should I do X?" Do X, explain why.
-- **Reserve questions for genuine ambiguity.** Ask only when you truly cannot infer intent from context.
-- **Make the system self-healing.** When you notice a problem, log it and fix it in the next round.
-- **Supervision is async.** The human reviews plans, diffs, and changes on their own schedule. Design workflows for review-after-the-fact.
-- **Code is cheap, attention is scarce.** A wrong implementation costs minutes to fix. A blocked agent costs the human's attention to unblock.
+**实践规范：**
+- **先做后报，以结果说话。** 扎实完成具体工作，直接呈现可运行的具体产物。不要空泛发问“我是否应该做 X”，直接实施方案 X 并清晰解释背后的技术决策理由。
+- **将提问严格限定在真实的需求模糊点上。** 仅当你穷尽上下文依然确实无法推断业务意图时，方可向人类发问。
+- **建立自我纠错与自愈意识。** 在推进过程中发现衍生问题时先记录在案，在后续迭代轮次中主动闭环修复。
+- **面向异步审查设计工作流。** 人类工程师会按照自身的节奏集中审查方案计划、Git diff 与代码改动；整个工作流必须针对“事后审查”进行优化设计。
+- **代码成本低廉，人类注意力极度稀缺。** 一段存在偏差的代码实现往往只需几分钟即可完成纠正，而一个陷入停滞阻塞的 Agent 却需要强行打断并消耗人类宝贵且稀缺的注意力来重新理清脉络。
 
-**Boundaries:**
-- **Irreversible actions** (force-push, delete production data, send external messages) still require confirmation.
-- **Reversible actions** (write code, edit notes, split tasks) should proceed without blocking.
-- **Product direction** comes from the human; *execution* should not block.
+**安全红线与边界：**
+- **不可逆的破坏性操作**（强制推送 force-push、物理删除生产数据、向真实外部客户发送通知等）必须严格暂停并等待人工确认。
+- **完全可逆的操作**（编写实现代码、整理开发笔记、拆解任务清单等）必须直接果断推进，严禁阻塞流程。
+- **产品核心方向**由人类定夺，具体的**工程执行与方案探索**严禁阻塞停滞。

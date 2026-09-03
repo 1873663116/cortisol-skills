@@ -1,101 +1,93 @@
 ---
 name: interrogate
-description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Multiple LLM reviewers challenge changes from independent angles."
+description: "用于“interrogate”、“对抗式审查”、“多模型交叉审查”、“挑战这个方案”、“压测这段代码”、“排查盲点”、“深度挑刺”。跨多个模型供应商并发派出独立审查者，从互补视角对代码改动实施极限压力测试与对抗式审查。"
 disable-model-invocation: true
 ---
 
 # Interrogate
 
-Spawn the reviewer panel assigned by the **dispatch** skill to adversarially review code changes. Each agent gets the same prompt and rubric. The adversarial signal comes from different agent types, vendors, and command-line environments, not assigned personas. Agreement across reviewers is high-confidence signal; lone-reviewer findings are worth reading but lower confidence.
+依据 **dispatch** 技能指派的审查席位，跨多个不同的模型供应商并发派出独立审查者，对目标代码改动实施严格的对抗式审查。各个审查者接收完全相同的任务 Prompt、代码上下文与审查量规。对抗性信号源自于各个 Agent 不同的底层模型供应商体系与独立推理视角，而非人为预设的虚假角色扮演。多个模型独立达成一致的缺陷属于极高置信度的核心信号；仅由单个审查者提出的意见同样具备参考价值，但置信度相对较低。
 
-The deliverable is a synthesized verdict. Do NOT auto-apply changes.
+最终核心交付物为一份经过主责工程师深度筛选把关的**综合裁决报告**，严禁未经人类确认自动执行任何代码修改。
 
-## Step 1, Determine Scope
+## 第 1 步：明确审查边界与范围
 
-Identify what to review from context:
+从上下文精准判定本次审查的目标范围：
+- 用户显式指定了具体文件或某段 Git diff，直接以此为准。
+- 当前处于特性开发分支上，运行 `git diff main...HEAD`（或对应的基线分支）获取完整的改动集。
+- 用户的提问指向近期的开发工作，全面收集相关联的修改文件。
 
-- If the user points at specific files or a diff, use that
-- If on a feature branch, run `git diff main...HEAD` (or the appropriate base branch) for the full changeset
-- If the user's message references recent work, gather the relevant files
+将待审的代码 diff（或文件内容）连同审查者正确理解上下文所需的周边关联文件一同打包。
 
-Package the diff (or file contents) plus any surrounding context files the reviewers need to understand the code.
+## 第 2 步：清晰声明业务与技术意图
 
-## Step 2, State the Intent
+在正式派发审查者之前，必须首先将本次改动的核心意图清晰书写出来。该改动究竟意在达成何种业务与架构目标？可从以下维度提炼：
+- 用户的原始需求描述。
+- 相关的 Git commit 提交信息。
+- PR 描述与设计文档。
+- 源码本身所表达的意图。
 
-Before spawning reviewers, state the intent explicitly. What is this code trying to accomplish? Derive this from:
+用一段精炼文本明确阐述。审查者的职责是深度审问“这段代码是否高质量、无副作用地达成了既定目标”，而非质疑目标本身的合法性。若你对核心意图存在疑虑，必须先向用户求证后再向下推进。
 
-- The user's message
-- Commit messages
-- PR description if one exists
-- The code itself
+## 第 3 步：并发派发多模型审查者
 
-Write one clear paragraph. Reviewers challenge whether the work achieves the intent well, not whether the intent itself is correct. If you're unsure about the intent, ask the user before proceeding.
+查阅 **dispatch** 技能规范，选用其 `Panel` 类别，为各个不同的模型供应商席位各派发一名审查者，全部并发运转。每个审查者任务中必须显式注明 `Do not write or modify files`（只读审查，严禁修改任何文件）。
 
-## Step 3, Spawn Reviewers
+查阅 `references/reviewer-prompt.md`，填充 Prompt 模板中的占位符：
+1. 声明的改动核心意图。
+2. 待审代码 diff 或完整文件内容。
+3. `references/rubric.md` 中的核心审查量规。
+4. `references/code-quality-review.md` 中的高标准代码质量审计规范。
 
-Read the **dispatch** skill and use its `Panel` class, one reviewer per vendor seat. Call `delegate_to_agent` for every reviewer before collecting any result. Use the workspace's absolute path as `working_dir`, keep every returned `task_id`, and collect them with `get_delegation_status` until all reviewers finish.
+将完全相同的完整 Prompt 分发给所有审查者，确保每个模型均深度应用代码质量审计视角。各审查者将按模板规范返回结构化的缺陷发现。
 
-The local delegate has no read-only mode. Put `Do not write or modify files` in every reviewer task.
+## 第 4 步：深度综合与交叉比对
 
-Read `references/reviewer-prompt.md` and fill in the template with:
-1. The stated intent
-2. The diff or file contents
-3. The review rubric from `references/rubric.md`
-4. The code-quality lens from `references/code-quality-review.md`
+在各审查者的报告陆续返回后，主编排者梳理出清晰的全局全景图：
+1. **解析全部发现**：完整通读所有审查者交付的原始报告。
+2. **识别共识缺陷**：由 2 个或更多模型独立提出的缺陷具备最高置信度。
+3. **识别孤立发现**：仅由单一模型提出的意见保留审阅，但相应下调置信度权重。
+4. **合并去重**：不同模型可能会以不同的表述指出同一个底层问题；将其精准合并并注明分别由哪些模型独立提出。
+5. **记录对立分歧**：若某个模型提出了某项质疑，而另一个模型明确给出了相反的反证结论，该分歧构成后续裁决的关键输入。
 
-The same filled template goes to all reviewers, so every model applies the code-quality lens.
+## 第 5 步：主评审实战工程裁决
 
-Each reviewer produces structured findings as described in the prompt template.
+你是本次审查的主评审（Lead Reviewer）——一位务实、讲求实效的资深工程师，而非被动机械的文字汇总者。
 
-## Step 4, Synthesize
+深入研读 `references/lead-judgment.md` 以掌握完整的裁决方法论。外部审查者仅能看到代码库的局部切片，而你掌握着全量上下文：包括业务终态目标、外部依赖约束、项目演进时间线、以及此前已深思熟虑做出的架构权衡。必须主动将这些上下文深度运用于裁决之中。
 
-As results come back, build a unified picture:
+将所有缺陷严格归入如下四类：
+- **要处理（Must address）**：紧密结合真实业务目标审视，确实影响代码正确性、系统安全性、数据一致性或长期可维护性的实质问题。这些属于在生产环境中足以直接阻断 PR 合并的硬性卡点。
+- **可考虑（Consider）**：客观成立的技术改进意见，但在当前阶段其收益与改造成本尚需权衡，值得呈现给用户定夺。
+- **已知悉（Noted）**：在理论上技术成立，但在当前具体场景下无需或无法立即操作（如属于轻微过早优化、或在当前阶段影响极小）。
+- **驳回（Dismissed）**：判定失误、缺乏上下文导致的误报、吹毛求疵或纯属个人主观代码审美偏好；附带一句简明的技术驳回理由。
 
-1. **Parse all findings** from the reviewers
-2. **Identify consensus**. Findings raised by 2+ reviewers independently are highest signal.
-3. **Identify lone-reviewer findings**. Still worth reading, but weight accordingly.
-4. **Deduplicate**. Different reviewers may describe the same issue differently. Merge these and note which agent types raised it.
-5. **Note disagreements**. If one reviewer flags something and another explicitly says the opposite, that's useful context for the verdict.
+每条缺陷均须明确标明：
+- 提出该项意见的具体审查者模型列表。
+- 最终归类（要处理 / 可考虑 / 已知悉 / 驳回）。
+- 单行裁决理由。
 
-## Step 5, Lead Judgment
+## 输出格式规范
 
-You are the lead reviewer, a pragmatic senior engineer, not a neutral aggregator.
+严格按如下结构输出最终裁决报告：
 
-Read `references/lead-judgment.md` for the full framework. Reviewers only see a slice of the codebase. You have the full context (the goal, the constraints, the timeline, which tradeoffs were already considered). Use that context aggressively.
+### 改动意图
+> [第 2 步中声明的核心意图]
 
-Categorize every finding using these buckets:
+### 审查者矩阵
+- 审查者 [代号]：[模型类别]，[识别出 N 项发现]（每位审查者单行呈现）
 
-- **Act on**. Real issues affecting correctness, security, or maintainability given the actual goals. These would block a real PR.
-- **Consider**. Legitimate points, but you're not sure they outweigh the cost of addressing them right now. Worth the user's attention.
-- **Noted**. Technically valid but not actionable. Context-dependent, premature optimization, or low-impact given the current stage.
-- **Dismissed**. Wrong, nitpicky, or missing context. Brief explanation why.
-
-For each finding, include:
-- Which reviewer agent type(s) raised it
-- The category (act on / consider / noted / dismissed)
-- A one-line rationale for the categorization
-
-## Output Format
-
-Present the verdict in this structure:
-
-### Intent
-> [The stated intent paragraph from Step 2]
-
-### Reviewers
-- Reviewer [label]: [agent type], [N findings] (one bullet per reviewer)
-
-### Act On
-[Findings that should be addressed. For each: description, which reviewers raised it, why it matters.]
+### Must address
+[必须解决的核心缺陷。逐项标明：缺陷描述、提出者模型、核心危害及为何必须修复。]
 
 ### Consider
-[Findings worth thinking about. For each: description, which reviewers raised it, tradeoff involved.]
+[值得权衡的改进建议。逐项标明：建议内容、提出者模型、涉及的技术收益与改造成本权衡。]
 
 ### Noted
-[Valid but low-priority. Brief list.]
+[成立但当前优先级较低的观察项。简明列出。]
 
 ### Dismissed
-[Rejected findings with brief rationale. This shows the user what was filtered out and why, so they can override your judgment if they disagree.]
+[被主评审否决的误报与无效意见，附简明技术反驳理由。使用户清晰了解被过滤的内容与理由，并在用户不同意时保留推翻裁决的权利。]
 
-### Agreement Map
-[Where did reviewers agree, where did they diverge, and what does the pattern of agreement/disagreement tell us?]
+### Consensus Map
+[各模型在哪些核心维度高度一致，在哪些位置发生分歧，该分布对系统质量传递出何种信号。]

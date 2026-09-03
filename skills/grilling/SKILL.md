@@ -1,22 +1,24 @@
 ---
 name: grilling
-description: Grill the user relentlessly about a plan, decision, or idea. Use when the user wants to stress-test their thinking, or uses any 'grill' trigger phrases.
+description: "就技术方案、架构决策或设计构想对用户展开 Grilling ，直至彻底消除模糊地带。当用户希望压力测试自己的思路，或使用任何包含“grill”的触发短语时使用。"
 ---
 
-Interview the user relentlessly until you reach a shared understanding. Map this as a **design tree**: every decision branches into the decisions that hang off it.
+# Grilling
 
-Work the tree in **rounds**. The **frontier** is every decision whose prerequisites are already settled — the questions you can ask _now_ without guessing at answers you haven't heard yet. Ask the whole frontier in one round: number each question and give your recommended answer. Then wait for the user's answers before the next round.
+对用户展开穷追不舍的对抗式深度访谈，直至双方就系统设计达成完全清晰的共识。将质询过程建模为一棵**Design Tree**：每个核心决策都会衍生出依赖于它的下游决策分支。
 
-Each question should be formatted like so:
+按**轮次**推进质询树。**前沿决策集合**由所有前置依赖均已明确敲定的决策组成——即那些**当前即可直接提问**、而无需对未获答复的前置条件进行凭空猜测的问题。在每一轮次中，一次性提出当前前沿集合中的全部问题：为每个问题依次编号并给出你所推荐的选项。随后等待用户的答复，再开启下一轮。
 
+每个问题的标准格式如下：
+
+```markdown
+❓ **Q1** - **<问题标题>**: <问题详细阐述，可包含多个段落，列出备选方案>
+
+➡️ <你所推荐的决策选项及理由>
 ```
-❓ **Q1** - **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
 
-➡️ <your recommended answer>
-```
+用户每完成一轮答复，设计树的形态都会重塑——已敲定的决策会推动前沿集合向外扩展，解锁依赖于它们的新问题。重新计算前沿集合并开启下一轮。凡是其答案依赖于本轮中尚未敲定的其他问题者，必须留待**后续轮次**提问，严禁在本轮抢跑。
 
-Each round the user answers reshapes the tree — settled decisions push the frontier outward and unblock questions that depended on them. Recompute the frontier and ask the next round. A question whose answer depends on another question still open in this round belongs to a _later_ round, not this one.
+**探寻客观事实是你的职责，绝非用户的负担**。当前沿问题需要来自运行环境（文件系统、工具调用、代码检索等）的客观事实支撑时，派发子 Agent 自行查明——凡是能自行查阅的信息，绝不向用户反向索取。不要因此阻塞全局：正在进行的异步探索属于尚未决出的前置条件，仅有其直接下游问题需要等待子 Agent 汇报，前沿集合中的其余问题应立即向用户抛出。**最终决策权始终归于用户**——将每个决策点明确呈现给用户并等待抉择。
 
-Finding _facts_ is your job, never the user's. When a frontier question needs a fact from the environment (filesystem, tools, etc.), dispatch a sub-agent to find it — don't ask the user for anything you could look up yourself. Don't block on it: a running exploration is an unsettled prerequisite, so only the questions downstream of it wait for the sub-agent to report — ask the rest of the frontier now. The _decisions_ are the user's — put each to them and wait.
-
-The session is done when the frontier is empty: every branch of the design tree visited, nothing left silently assumed. Do not act on it until the user confirms you have reached a shared understanding.
+当**前沿集合为空**时，质询会话方可宣告结束：设计树的每个分支均已遍历勘探完毕，没有任何未经证实的隐式假设残留。在用户明确确认双方已达成一致共识之前，切勿擅自推进具体的代码实现。

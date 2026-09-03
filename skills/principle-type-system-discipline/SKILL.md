@@ -1,31 +1,29 @@
 ---
 name: principle-type-system-discipline
-description: "Apply when designing types, reviewing a function signature, or writing code in any statically-typed language. Make illegal states unrepresentable, brand semantic primitives, parse external data at boundaries, refuse to lie to the compiler, exhaust variants, derive from authoritative schemas."
+description: "在任何强类型语言中设计类型定义、函数签名或编写业务代码时使用。使非法状态无法在类型层面表达，运用名义类型（branded types）区分原始值，在系统边界解析（parse）而非假设外部数据，拒绝对编译器撒谎，穷尽所有变体匹配，从权威 Schema 派生类型。"
 disable-model-invocation: true
 ---
 
-# Type System Discipline
+# 类型系统纪律（Type System Discipline）
 
-The type checker is a proof assistant. Use it to eliminate impossible states, mismatched primitives, and unhandled variants at compile time. A case the types let you ignore becomes a runtime failure the compiler could have stopped. Prefer defining errors and special cases out of existence over proliferating handlers; unrepresentable states, total functions, and interface redesign (the patterns below) are the tools.
+强类型检查器是最高效的自动化逻辑定理证明器。充分运用类型系统在编译期彻底消除不可能出现的非法状态、语义错配的基础类型以及未处理的分支变体。类型定义中允许被忽略的漏洞，终将在运行时演变为编译器本可直接拦截的线上故障。优先通过严密的类型设计使错误和特例在定义层面根本无法存在，而非在代码中无休止地堆砌防御性分支判断。
 
-Applies to any typed language. Skills like `typescript-best-practices` ground it in specific syntax.
+本原则适用于一切强类型编程语言（如 TypeScript、Rust、Go、Swift、Kotlin、Scala 等）。具体语法实践可结合各语言专属最佳实践技能。
 
-**The patterns:**
+**核心模式：**
 
-- **Make illegal states unrepresentable.** Model variants as sum types: discriminated unions in TypeScript, enums with payloads in Rust/Swift/Kotlin, sealed classes in Scala, ADTs in Haskell/OCaml. Don't model state as a bag of optional fields where contradictory combinations compile. A subtle anti-pattern worth naming: `{ completed: boolean; completedAt?: Date }` admits `completed: true; completedAt: undefined`, which is meaningless. Derive the boolean from a single source like `completedAt !== null`, or model the variants explicitly as `{ kind: 'open' } | { kind: 'done'; at: Date }`. If a bug forces the question "wait, can this combination actually happen?", the type is too loose.
-- **Types are constructions, not restrictions.** Build the type up from the values you want instead of carving them out of a looser type with checks. The invariant that seems to need a refinement type is usually a construction away. A non-empty list is a head plus a rest, not a list with a length check. A valid time range is a start plus a duration, not two timestamps you must keep ordered. No representation is privileged. A list of pairs is an even-length list if you interpret it that way, so choose the shape that cannot build the illegal value and expose the interface callers need on top.
-- **Brand semantic primitives.** `UserId` and `OrderId` are strings underneath but should not be interchangeable. Newtypes in Rust, opaque types in Swift, value classes in Kotlin, phantom types in Haskell, branded intersections in TypeScript. Validate once at creation, trust the type downstream.
-- **External data is untyped until parsed.** RPC payloads, JSON, IPC messages, CLI args, config files, environment variables, database rows. Have a parse function at every boundary that turns unstructured input into the typed model. See the **boundary-discipline** principle skill for where to put validation.
-- **Don't lie to the type system.** Casts, unsafe coercions, and assertion functions that bypass the compiler are runtime crashes waiting to happen. If the compiler can't prove a fact, prove it (validate, narrow, refine the model) or accept that the cast is a hazard. The cast you bury today is the postmortem you write next week.
-- **Exhaustive matching is the compiler's job.** When you match on a sum type, the compiler must fail compilation if a new variant is added without handling. Use the idiom your language provides: `never`-typed binding in TypeScript, unannotated `match` in Rust, `-Wincomplete-patterns` in Haskell, sealed-class match exhaustiveness in Kotlin.
-- **Derive types from authoritative schemas.** When a protocol buffer, OpenAPI spec, GraphQL schema, database migration, or design-system token file defines a shape, derive from it instead of hand-rolling a parallel type. Manual duplication drifts. See the **encode-lessons-in-structure** principle skill.
-- **Strengthen a type only where partiality appears.** A runtime assertion, null check, or "this should never happen" throw marks the place a type is too weak. Push that check up into the type. Then stop. The type system's job is to track the cases each use site must handle, not to describe the data as precisely as possible. Prefer total functions. `sum` of an empty list is 0, so it takes the plain list. `head` of an empty list has no answer, so it demands the non-empty one. Extra precision costs reuse and ceremony and buys no safety.
+- **使非法状态在类型层面无法被表达。** 使用和类型（Sum types）对互斥变体进行精确建模：如 TypeScript 中的可辨识联合（Discriminated Unions）、Rust/Swift/Kotlin 中携带有效载荷的枚举、Scala 的 Sealed 类族、以及函数式语言中的代数数据类型（ADT）。严禁将状态简单建模为一堆扁平的可选字段（Optional fields），以免让相互矛盾的非法状态组合侥幸通过编译。典型反例：`{ completed: boolean; completedAt?: Date }` 允许存在 `{ completed: true, completedAt: undefined }` 这种荒谬的非法组合；应将布尔标记改为由单一事实来源派生（如 `completedAt !== null`），或显式建模为联合类型 `{ kind: 'open' } | { kind: 'done', at: Date }`。若某个 Bug 迫使你发问“等等，这种字段组合在现实中真的可能出现吗？”，说明类型定义过于松散。
+- **类型应当正向构造，而非通过防御性检查事后约束。** 从你期望的合法值出发直接构造类型，而非先定义一个宽泛松散的类型再在运行时靠条件判断去削减。那些看似需要精确细化类型（Refinement types）的不变量，通常只需一次合理的类型构造即可达成：非空列表应定义为“头部单元素 + 尾部普通列表”，而非“普通列表 + 运行时长度检查”；合法的时间区间应定义为“起始时间点 + 时间跨度（Duration）”，而非“两个必须手动校验先后顺序的时间戳”。选择从结构上根本无法构造出非法数据的形态，再在其上暴露清晰的对外接口。
+- **运用名义类型（Branded Types）标记基础类型。** `UserId` 与 `OrderId` 底层可能均为字符串或整型，但二者在业务语义上绝对不可混用。在 Rust 中使用 Newtype，在 Swift 中使用 Opaque Type，在 Kotlin 中使用 Value Class，在 TypeScript 中使用 Branded 交叉类型。在创建时校验一次，下游业务逻辑即可无条件信任强类型契约。
+- **外部输入在被解析前一律视为无类型原始数据。** 涵盖 RPC 请求载荷、JSON 文本、IPC 通信消息、CLI 命令行参数、配置文件、环境变量以及数据库原始查询行。系统外部边界必须设置严密的解析函数（Parsing），将非结构化原始输入转换为经严格校验的强类型领域模型（遵循**边界设防纪律**原则）。
+- **严绝对类型系统撒谎。** 滥用强制类型转换（如 TypeScript 中的 `as unknown as T` 或 `any`）、不安全的类型伪造以及绕过编译器的无理由断言，都是潜伏在线上的定时炸弹。若编译器无法自动证明某一事实的成立，正确的做法是通过边界校验、类型收窄（Type narrowing）或改进模型设计来给出形式化证明，而非通过类型断言掩耳盗铃。今日埋下的不安全类型强转，便是明日必将撰写的线上故障事故复盘。
+- **穷尽模式匹配由编译器强制保障。** 对和类型或枚举变体进行匹配处理时，一旦系统未来新增了变体而当前代码未做处理，编译必须强制失败。充分利用各语言机制：TypeScript 中将兜底分支绑定至 `never` 类型、Rust 中禁用通配的穷尽 `match`、Kotlin 中对 Sealed 类的完整分支检查等。
+- **从单一权威 Schema 自动化派生类型。** 当 Protocol Buffers、OpenAPI/Swagger 规范、GraphQL Schema、数据库迁移文件或设计系统 Token 已定义了权威数据形态时，直接通过工具自动化派生代码类型，严禁纯手工维护平行的重复定义（手工维护必然导致定义漂移，遵循**将教训沉淀进系统结构中**原则）。
+- **仅在出现偏函数（Partial Function）的边界强化类型。** 运行时的异常断言、空指针防御以及“理论上绝不可能发生”的主观报错，都是类型定义偏弱的明确信号；应将该校验逻辑向上推入类型定义中。类型系统的核心职责在于明确每个使用点必须显式处理的分支情形，而非无节制地过度追求形式上的繁琐精度；优先设计全函数（Total Function）。
 
-**The tests:**
-
-- "Can I write a comment explaining when this combination of fields is valid?" If yes, the type is too loose. Split it into a sum type.
-- "Do two of my function arguments share a primitive type but mean different things?" Brand them.
-- "Where did this `any`, this `as`, this `assertNotNull` come from?" Trace it to the boundary and validate there instead.
-- "If a new variant is added next month, will the compiler tell the next agent where to add a case?" If no, the match isn't exhaustive.
-- "Is this type duplicating a shape another file owns?" Derive instead.
-- "Am I strengthening this type to keep an operation total, or just to be more precise?" If nothing would otherwise panic, keep the plain type.
+**自查与检验准则：**
+- “我是否需要写一大段注释来解释这几个字段在何种组合下才是合法的？”若需要，说明类型过于松散，应立即重构为可辨识联合。
+- “函数的两个入参是否共享相同的底层基础类型却代表完全不同的业务实体？”若是，立即运用 Branded Types 进行区分。
+- “代码中的 `any`、`as` 或非空断言源自何处？”一路向上回溯至系统边界，改在边界处完成结构化解析与类型收窄。
+- “若下个月新增一个业务变体，编译器能否精准指出后续维护者需要在哪些函数中补齐处理分支？”若不能，说明未实现穷尽模式匹配。
+- “当前类型定义是否在机械重复另一个文件已有的结构？”若是，立即改为基于单一权威源派生。

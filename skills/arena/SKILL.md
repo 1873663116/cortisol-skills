@@ -1,71 +1,73 @@
 ---
 name: arena
-description: "Spawn N parallel candidates at the same task, pick a base, graft the strongest parts of the losers into it. Use for /arena, 'arena this', 'throw it in the arena', or when one attempt at a non-trivial artifact would lock in the wrong shape."
+description: "针对同一任务并发派发 N 个候选方案进行独立探索，选定最优方案作为底稿，并将落选方案中的精妙亮点嫁接融合进最终产物中。适用于 /arena、“arena this”、“throw it in the arena”，或任何一旦单次草率定稿极易锁死错误形态的非简单架构/设计任务。"
 disable-model-invocation: true
 ---
 
 # Arena
 
-Fan out N parallel attempts at the same task. Read every candidate end to end. Pick the strongest as the base. Graft the best ideas from the others into it. Verify the synthesized result.
+针对同一项任务，并发扇出 N 个独立的方案尝试。逐一完整研读每一份候选方案，选定综合实力最强的一份作为基础底稿，随后将其他落选方案中最具亮点的精妙设计深度嫁接融合进来，最后对综合提炼后的最终产物进行端到端闭环验证。
 
-## Start
+## 启动准备
 
-Open a todolist with one entry per phase before launching anything. The arena runs autonomously and the list keeps phases from silently disappearing.
+在派遣任何子 Agent 之前，必须先建立清晰的 todolist，每个阶段对应一项。Arena 是完全自主运行的流水线，此清单能有效防止关键阶段被意外跳过：
 
-1. Frame
+1. Frame the task
 2. Fan out
 3. Cross-judge
-4. Pick
-5. Graft
-6. Verify
+4. Pick the baseline
+5. Grafting
+6. Verification
 
-## Phase A: Frame
+## Phase A: Frame the task
 
-The N candidates will receive the same prompt, so the prompt is the contract. Get it right before spawning anything.
+N 个候选 Runner 将收到完全相同的任务 Prompt，因此该 Prompt 本身即是不可动摇的契约标准。在正式派发前必须将其打磨至无可挑剔：
 
-1. State the artifact each candidate is producing.
-2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. Concrete: `Adds a --dry-run flag that skips writes`. Vague: `code is correct`. The rubric is the picker's tool in Phase D; candidates only see the task.
-3. Pick the runners. Read the **dispatch** skill and use its `Panel` class. Spawn more when the arena covers multiple design directions. Reuse an agent type when the work is generation-bound rather than judgment-sensitive.
-4. Assign output paths. Each candidate writes to its own location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`). N candidates writing to the same path is shared mutable state and fails the the **separate-before-serializing-shared-state** principle skill test.
+1. **清晰定义目标产物。** 明确规定每个候选方案必须产出的具体交付物形态与内容要求。
+2. **推导量化评分标准。** 明确阐述针对*本次特定任务*何为真正的“成功”，并将其提炼为 3 到 6 条明确、可独立打分的具体客观准则。优秀准则示例：`增加 --dry-run 参数且在启用时跳过所有实际写入操作`；劣质模糊准则反例：`代码逻辑正确`。评分标准是 Phase D 中主裁决者使用的工具，候选 Runner 仅接收任务目标与约束，看不到评分标准。
+3. **选定 Runner 模型角色。** 查阅 **dispatch** 技能规范，选用其 `Panel` 类别。当 Arena 旨在探索截然不同的设计方向时，应横跨多个不同模型供应商进行派发；若任务受限于生成吞吐而非判断质量，可复用同类型的高效 Agent。
+4. **分配物理隔离的输出路径。** 为每个候选方案分配互不干扰的独立路径（优先使用 Git Worktree，其次使用 `/tmp/arena-<slug>/candidate-<n>/`）。若 N 个候选向同一个路径并发写入，属于严重的可变状态共享，直接违反[串行化共享状态前先消除共享](../principle-separate-before-serializing-shared-state/SKILL.md)原则。
 
 ## Phase B: Fan out
 
-Call `delegate_to_agent` for all N candidates before collecting any result. Put the shared grounding path and the artifact and rationale instructions in `task`; pass each candidate's isolated output directory as the absolute `working_dir`. Keep every returned `task_id` and collect them with `get_delegation_status` until all candidates finish. The calls are asynchronous by definition.
+并发派发全部 N 个候选 Runner，使其并行运转。将共享的基线资料路径、产物规格以及撰写架构决策理由的硬性要求完整注入每个任务 Prompt 中，并让每个 Runner 在独立的 worktree 中执行以确保工作空间物理隔离。
 
-The rationale is mandatory. Without it, the parent cannot tell whether a candidate's structure is principled or accidental, which makes Phase E grafting unreliable. Each rationale names the alternatives the candidate considered and what it rejected.
+书写架构理由是不可妥协的硬性要求：缺乏详尽理由说明，主编排者将无法分辨某个候选方案的结构是经过深思熟虑的精妙设计还是碰巧蒙对的产物，后续 Phase E 的嫁接融合也将失去可靠基石。每份理由文档均须明确点名该方案曾考虑过哪些备选路径，以及基于何种具体考量将其否决。
 
-If a candidate fails to produce output, proceed with N-1 and note the dropout in the synthesis record.
+若个别候选 Runner 意外执行失败或超时掉线，按剩余的 N-1 个有效方案继续向下推进，并在最终综合说明中如实记录掉线情况。
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, read the **dispatch** skill and use its `arena cross-judge` role. Call `delegate_to_agent` with an agent type whose vendor differs from the parent's and use the workspace's absolute path as `working_dir`. The judge sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. Put `Do not write or modify files` in the task because the local delegate has no read-only mode. Collect its `task_id` with `get_delegation_status` while the parent reads candidates in Phase D. Do not dispatch the judge while candidates are still writing; it would see partial or empty outputs and report them as dropouts.
+在 Phase B 的所有候选方案全部生成完毕后，查阅 **dispatch** 技能规范，调用其 `arena cross-judge` 角色。裁判 Agent 必须调度至与主编排者不同的模型供应商上运行。
 
-## Phase D: Pick a base
+裁判将接收评分标准以及按路径标签区分的各候选方案，对照评分准则逐条打分，并给出其推荐的基础底稿及深度理由。裁判任务中必须显式注明 `Do not write or modify files`（只读评判，严禁修改文件）。将裁判置于后台异步运行，主编排者在此期间可并发研读各候选方案（Phase D）。严禁在候选方案仍在写入时提前派发裁判，否则裁判将读取到残缺内容并误判为方案失效。
 
-Read every candidate end to end before picking. Skimming N candidates surfaces only the candidate whose surface looks most familiar.
+## Phase D: Pick the baseline
 
-Score each candidate against the rubric criterion by criterion, not on holistic feel. Compare against the cross-judge. Agreement on the base confirms the pick. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
+在做出任何决定前，主编排者必须完整研读每一份候选方案。仅仅粗略扫一眼方案表面，往往只会让最符合过往惯性思维的平庸方案浮出水面。
 
-Pick the base on which candidate a future maintainer can extend most easily without breaking invariants. Prefer the cleaner boundary or smaller surface area when two feel tied, per the Laziness Protocol.
+对照评分准则逐条对每份候选打分，坚决杜绝凭空泛的整体印象主观打分。随后将打分结果与 Phase C 的独立裁判结论进行横向交叉比对：若双方在基础底稿的选型上高度一致，则该选型得到双重验证；若出现分歧，说明其中一方存在认知盲区，或评分标准本身存在歧义。在最终拍板前，深入通读双方的完整论证理由。
 
-Record the pick and the reason in a short synthesis note alongside the base artifact, including the cross-judge's verdict.
+选定基础底稿的核心黄金法则：**哪一套候选方案能让未来的维护者在完全不破坏系统核心不变量的前提下，最自然、最低心智负担地进行扩展？** 若两套方案在质量上难分伯仲，遵循[极简工程原则](../principle-laziness-protocol/SKILL.md)，果断选择模块边界更干净、向外暴露表面积更小的那一份。
 
-## Phase E: Graft
+在底稿产物旁撰写一份简要的综合决策纪要，记录选型结果、核心选型理由以及跨模型裁判的具体裁决对比。
 
-Walk each losing candidate once more and identify what is worth porting into the base. The signal is usually one or two things per candidate, not most of it.
+## Phase E: Grafting
 
-Fold each graft in by hand, per the **redesign-from-first-principles** principle skill. Don't paste mechanically. The result has to remain coherent under one mental model.
+重新通读每一份落选的候选方案，精准提炼其中值得反哺移植进基础底稿的精妙局部设计。通常每份落选方案中真正具备高价值增量信息的仅仅是一到两处局部设计，而非其整体架构。
 
-Record what was grafted, from which candidate, and what was rejected and why. The rejection notes are the highest-signal part of the record. Future readers learn from what you considered and dropped, not just what you kept.
+贯彻[第一性原理重构](../principle-redesign-from-first-principles/SKILL.md)原则，将选中的亮点逐一手工优雅融合进底稿中，坚决避免机械生硬的代码拼贴。融合后的最终产物必须在统一、自洽的心智模型下浑然一体。
 
-When N candidates converge on the same shape, that is a strong agreement signal. Note the convergence in the record and ship the consensus shape. No graft is needed. When N candidates wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
+详尽记录：本次嫁接了哪些具体设计、分别源自哪个候选方案、驳回了哪些提案及其背后的确凿理由。**被驳回提案的记录往往是整份技术资产中含金量最高的部分**：后续接手的开发者从你经过深思熟虑后主动舍弃的方案中，所能获得的架构启示远多于直接看最终保留的代码。
 
-## Phase F: Verify
+当 N 个候选方案自发收敛至高度一致的架构形态时，这是极强的共识置信度信号；在纪要中明确记录该收敛现象，直接交付共识形态即可，无需画蛇添足强行嫁接。而当 N 个候选方案发生灾难性严重发散时，通常意味着 Phase A 的立框目标与约束说明不够清晰；此时应返回 Phase A 重新立框并重新运行比选，严禁将南辕北辙的分歧方案进行毫无原则的“折中妥协”。
 
-The synthesized artifact has to hold up under the same scrutiny as any other output, per the **prove-it-works** principle skill. The arena does not earn you a pass.
+## Phase F: Verification
 
-If verification surfaces a problem the arena did not catch, either Phase A was wrong (re-frame and re-run) or one candidate caught it and you missed the graft (go back to Phase E). Don't paper over.
+贯彻[用实际运行证明有效](../principle-prove-it-works/SKILL.md)原则，综合提炼后的最终产物必须经受与任何正式生产代码同等严苛的验证检验。走过 Arena 比选流程绝不等于可以获得任何形式的免检特权。
 
-## Outputs
+若验证过程中暴露出了 Arena 未曾捕获的潜在缺陷，要么说明 Phase A 的立框标准遗漏了关键约束（重新立框并重跑），要么说明某个落选方案其实已经规避了该问题而你在 Phase E 嫁接时发生遗漏（返回 Phase E 补齐融合）。坚决杜绝掩盖问题蒙混过关。
 
-One synthesized artifact. One short synthesis note alongside, naming the base, the grafts (with source candidate), the rejections, the dropouts if any, and the verification result.
+## 最终交付物
+
+一份经深度提炼与优势基因嫁接的最终高质量产物。随附一份结构清晰的综合说明，明确标明：选定的基础底稿、各项嫁接设计及其来源方案、被驳回的提案清单及其技术反证、掉线异常记录（若存在），以及最终的端到端闭环验证结果。

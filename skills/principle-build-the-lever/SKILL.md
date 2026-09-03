@@ -1,23 +1,24 @@
 ---
 name: principle-build-the-lever
-description: "Apply to any non-trivial work, not just bulk work: edits, migrations, analyses, checks. Build the tool that does it or proves it (codemod, script, generator, or a skill your subagents follow) instead of working by hand. The tool is the artifact a reviewer can rerun."
+description: "适用于一切非简单任务（如批量编辑、全局迁移、深度分析、端到端校验等）。编写能够自动化执行或证明结果的工具（codemod、自动化脚本、代码生成器，或供子 Agent 共同遵循的结构化技能），避免纯手工操作。该工具即是供评审者复现验证的正式交付物。"
 disable-model-invocation: true
 ---
+
 # Build the Lever
 
-When the work isn't trivial, build the tool that does it instead of doing it by hand.
+面对非简单任务时，主动打造能够自动化完成或证明该任务的工具，坚决避免纯手工低效重复。
 
-**Why:** Two payoffs. Throughput: a codemod, generator, or script does the work the same way every time and reruns for free. Confidence: the tool is one artifact a reviewer can read and rerun to check the work. Hand-done changes can only be re-verified by redoing them. A deterministic script turns "trust me" into "run this".
+**核心理由。** 具备双重核心收益。吞吐效率层面：codemod、生成器或自动化脚本能够以确定性方式反复执行，后续复现与重跑近乎零成本。可信度层面：该工具是一份透明的交付物，评审者可亲自审阅并重跑以复核产物正确性。纯手工改动只能靠从头再做一遍来复验，而确定性的脚本将“相信我的人工检查”转变为可复现的“直接运行这个脚本”。
 
-**Pattern:** Default to building the lever. Skip it only when the task is genuinely trivial, a couple of obvious edits you can see at a glance.
+**实践模式。** 默认优先打造杠杆工具。仅在改动极其微小、一眼即可穷尽且毫无重复性的极简场景下才允许跳过。
 
-- Do the first unit by hand to learn the recipe, then build the tool. Prove it by rerunning it on that unit and diffing against your hand-done version. Make the lever safe to rerun. A reviewer will.
-- Codemod or script for edits, generator for repetitive files, a dump-to-sqlite query for analysis, a rerunnable check for verification.
-- A deterministic lever beats fan-out. If the tool can process every unit in one pass, run it yourself; don't fan out delegates to hand-apply what a script can do.
-- When you fan work out to subagents, write the lever as a skill they all read: the recipe, the verification contract, and the do-not-touch fences in one artifact, so every delegate inherits the same hardened version instead of re-explaining it per prompt and watching each one drift. Keep it outside the delegates' write scope so they can't quietly edit the contract.
-- Applying this principle produces a file. If you cited it and there is no codemod, script, generator, or delegate skill in the diff, you didn't apply it.
-- Commit the lever when the work outlives the session, so the next run reruns it instead of redoing it.
+- 先手动完成首个最小单元以摸清改动规律，随后立即构建自动化工具。在相同单元上重跑工具，将其输出与手动版本进行 diff 校验以验证其正确性。确保杠杆工具具备可安全重跑的幂等性，评审者必会重新运行它。
+- 批量代码编辑使用 codemod 或专用脚本；重复性样板文件使用生成器；数据与结构分析使用 Dump-to-SQLite 查询；端到端校验使用可自动化重跑的验证脚本。
+- 确定性的杠杆工具远胜于盲目扇出 Agent。若一个脚本能够单趟完整处理所有单元，直接由脚本执行；严禁派发一堆 Agent 去低效手工完成脚本本就可以处理的事。
+- 将工作扇出给 SubAgent 时，将杠杆工具封装为所有子 Agent 均需读取的规范技能：将操作配方、验证契约与禁止触碰的安全边界集中定义在单一文件中。确保每个子 Agent 继承完全一致的加固规则，而非在各个 Prompt 中反复口头解释并导致理解漂移。将该技能文件置于子 Agent 的写权限之外，防止其擅自篡改契约。
+- 贯彻本原则必然会产出对应的工具文件。若在回复中引用了本原则，而 Git diff 中却未见任何 codemod、脚本、生成器或规范技能，则说明并未真正贯彻本原则。
+- 当任务影响超出单次会话周期时，将杠杆工具随代码一同提交入库，以便后续会话直接运行复现，而非从头重写。
 
-**Balance:** The bar is triviality, not repetition. A one-off still earns a lever when the lever is what makes the work checkable. Per the [Laziness Protocol](../principle-laziness-protocol/SKILL.md), build the smallest script that does or proves the job, never a framework.
+**权衡与边界。** 打造杠杆的门槛在于任务本身的复杂度与验证需求，而非仅看是否发生重复。即使是一次性的改动，只要该工具能让验证过程变得可程序化核验，就值得构建。遵循[极简工程原则](../principle-laziness-protocol/SKILL.md)，构建能够解决或证明当前任务的最小脚本即可，严禁过度设计重型框架。
 
-Distinct from [Encode Lessons in Structure](../principle-encode-lessons-in-structure/SKILL.md), which makes a recurring instruction a durable guardrail. This is throughput and reviewability on the work in front of you. For scripting the verification itself, see [Prove It Works](../principle-prove-it-works/SKILL.md).
+本原则与[将教训沉淀进系统结构中](../principle-encode-lessons-in-structure/SKILL.md)有明确分工：后者侧重于将反复出现的人工纠偏沉淀为长效系统护栏；本原则专注于提升眼前具体任务的执行吞吐与可评审性。关于验证逻辑本身的脚本化，参见[用实际运行证明有效](../principle-prove-it-works/SKILL.md)。

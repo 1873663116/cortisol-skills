@@ -1,0 +1,33 @@
+{
+  "version": 3,
+  "skills": {
+    "computer-use": {
+      "source": "stablyai/orca",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/stablyai/orca.git",
+      "skillPath": "skills/computer-use/SKILL.md",
+      "skillFolderHash": "2072384f53670cb61d93f4f6264ad2d8f6b5239c",
+      "installedAt": "2026-08-28T03:14:41.837Z",
+      "updatedAt": "2026-08-28T03:14:41.837Z"
+    },
+    "orca-cli": {
+      "source": "stablyai/orca",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/stablyai/orca.git",
+      "skillPath": "skills/orca-cli/SKILL.md",
+      "skillFolderHash": "ee3a35c76f875ea6ebaf68947af13ba6346b13f2",
+      "installedAt": "2026-08-28T03:14:41.843Z",
+      "updatedAt": "2026-08-28T03:14:41.843Z"
+    },
+    "orchestration": {
+      "source": "stablyai/orca",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/stablyai/orca.git",
+      "skillPath": "skills/orchestration/SKILL.md",
+      "skillFolderHash": "9aa26fde93c0592e5983cdca1ccd33b402802255",
+      "installedAt": "2026-08-28T03:14:41.843Z",
+      "updatedAt": "2026-08-28T03:14:41.843Z"
+    }
+  },
+  "dismissed": {}
+}

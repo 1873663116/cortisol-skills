@@ -1,24 +1,24 @@
 ---
 name: no-comments
-description: "Spawn Comment Sicko, fix accepted findings, and offer encodings for claimed constraints."
+description: "调度 Comment Sicko 专项审查 Agent，彻底清理代码库中冗余的注释与解释性废话，并将合理的业务约束固化为确定性的系统机制。"
 disable-model-invocation: true
 ---
 
-# No comments
+# No Comments
 
-Spawn Comment Sicko. Act on accepted findings.
+派发专属的 Comment Sicko 审计 Agent，对代码中的各类注释展开彻底清理与重塑。
 
-Authoring agents defend comments. Defer to Comment Sicko's fresh perspective.
+编写代码的 Agent 往往具有下意识为自己随手写下的注释进行自我辩护的盲目倾向，必须以 Comment Sicko 独立、审慎的客观视角为准。
 
-## Scope
+## 审计范围划定
 
-Use the caller's files or diff. Otherwise use the current diff against the base branch, default `main`, including the working tree.
+采用调用方显式指定的文件路径或 Git diff 范围。若未显式提供，则默认使用当前 Worktree 相对于基线分支（默认 `main`）的完整 diff（包含 Worktree 中未提交的暂存改动）。
 
-## Steps
+## 执行步骤
 
-1. Read the **dispatch** skill and select its `Judgment` class. Call `delegate_to_agent` with a task that points at `/Users/xiongzhipeng/.agents/pstack/agents/comment-sicko.md`, passes the scope, and says `Do not write or modify files`. Use the reviewed workspace's absolute path as `working_dir`, then collect the returned `task_id` with `get_delegation_status`.
-2. Inspect its report and diff. Reject application-code edits, scope escapes, exception-protected deletions, misstated `MUST KILL` reasons, and flags that treat kept intentional code as guilty. Reshape flags on our-code surprises stay actionable. Do not restore those comments. A keep survives only with proof it is about something we cannot change. Audit missed scoped lint and TypeScript suppressions. Correctness or safety suppressions stay actionable `MUST KILL`s. Restore deletions only with exact exceptions and scoped proof. Before accepting thin `IMPORTANT` or `do not remove` kills or keeps, run `/how` or `/why` on their symbol. If a kill is ambiguous, do not restore. If a keep is refuted or still ambiguous, delete it. Revert and rerun one rejected report with the failure named. Reject a second, report it open, and fail `/no-comments`.
-3. Fix trivial accepted flags directly by deleting a dead path, dropping a parameter, or using the real API. If any fix needs a shape, run `/architect` once for the accepted set and surrounding code. Stop at the sketch. Architect shapes. Step 4 implements.
-4. Implement the smallest root-cause fix in scope. Remove every named workaround. If the root cause is out of scope, land the smallest in-scope fix and report the rest open. The **principle-fix-root-causes** and **principle-redesign-from-first-principles** skills guide intent only: fix real causes, redesign as if requirements always existed, never bolt on symptom guards. Neither authorizes widening the fence nor fixing instances outside it.
-5. Constraint comments say `do not remove`, `do not change wording`, or `talk to X before changing`. Leave keeps about things we cannot change. Offer the cheapest in-scope type, runtime, test, or CI lint. Wait for interactive approval. Unattended and eval require caller pre-approval. If approved, encode then delete. Otherwise delete, report the constraint open, and sketch out-of-scope work.
-6. Report the deletion count, restored comments, reruns, architect sketch, fixes, encoding offers, encodings, unenforced constraints, and other open work.
+1. **派发 Comment Sicko**：查阅 **dispatch** 技能规范，选用其 `Letter-precise` 类别。派出一个独立 Agent，任务指令指向 `/Users/xiongzhipeng/.agents/pstack/agents/comment-sicko.md`，传入明确的审计范围，并显式注明 `Do not write or modify files`。
+2. **严格审查报告与判定**：以下几类违规判定必须直接予以驳回：擅自篡改业务应用代码、越界超出指定范围、错误删除了受例外条款保护的注释、对 `MUST KILL` 的理由陈述有误、以及将有意保留的合法逻辑错误判定为违规。针对代码中意外暴露的设计瑕疵而提出的重构诉求属于合理意见，应当予以采纳。被驳回的冗余注释坚决不予恢复。一条“保留”意见唯有当能确凿证明其解释的是我们当前无法修改的外部客观客观约束时方可成立。深度审计是否存在遗漏的作用域级 Lint 规则或 TypeScript 忽略注解（如 `@ts-ignore`、`eslint-disable`），涉及代码正确性或安全性的违规抑制声明一律属于必须彻底拔除的 `MUST KILL`。在采纳缺乏充分依据的 `IMPORTANT` 或 `do not remove` 类注释前，率先对相关符号调用 `/how` 或 `/why` 进行历史溯源。删除判定存在歧义时不予恢复；保留判定被推翻或存疑时坚决予以物理删除。若审计报告被整体驳回，在明确指出失败根因后可回滚重跑一次；若二次执行仍被驳回，将其作为未决问题如实上报，并判定当前任务未通过。
+3. **即时清理琐碎且已采纳的标记**：如直接物理删除死路径、剔除多余参数、替换为官方正式 API。若某处修复需要率先确立设计形态，针对涉及的核心代码调用 `/architect` 进行方案草图设计（Architect 负责敲定骨架，后续步骤负责具体落地）。
+4. **在受控范围内实施最小化根因修复**：彻底拔除被指明的每一处临时绕行方案。若根本病因超出当前任务范围，仅落地当前范围内的最小必要修复，其余深层问题作为独立未决事项如实上报。请注意：[直击根本原因](../principle-fix-root-causes/SKILL.md)与[第一性原理重构](../principle-redesign-from-first-principles/SKILL.md)原则仅用于指导设计意图（即根除病因而非生硬外挂），绝不构成擅自扩大任务边界或擅自修复外部不相干模块的授权。
+5. **强约束型注释的机制固化**：针对标有 `do not remove`、`do not change wording` 或 `talk to X before changing` 的强约束注释，若其陈述的是外部无法更改的事实，在保留的同时给出在当前范围内成本最低的固化替代方案（通过类型系统约束、运行时强断言、单元测试断言或 CI Lint 规则进行机制化锁定）。等待人类工程师交互式批准；获批后立即完成机制固化并物理删除口头注释，未获批时先删除注释并将该约束作为未决事项上报。
+6. **输出最终审计与清理报告**：详尽汇总：删除的注释总量、被合规保留/恢复的注释清单、重跑记录、Architect 设计草图、各项具体代码修复、提出的机制固化方案、已完成落地的机制固化、尚未被强制执行的遗留约束，以及其他未决待办项。

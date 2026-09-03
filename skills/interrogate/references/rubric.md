@@ -1,77 +1,75 @@
 # Review Rubric
 
-Review through whichever lenses are relevant. Not every lens applies to every change. Use judgment.
+运用与当前改动高度相关的视角展开深度审阅。并非每个视角都适用于所有改动，请基于工程常识自主权衡。
 
 ## Correctness
 
-Does the code actually do what the intent says it should?
+代码是否真正精准达成了声明的业务与技术意图？
 
-- Edge cases: empty inputs, nil/undefined, boundary values, concurrent access
-- Error handling: are errors caught, propagated, or silently swallowed?
-- Off-by-one, type coercion, integer overflow, string encoding
-- State management: race conditions, stale closures, dangling references
-- Does the happy path work? Does the sad path work?
-- Idempotency: what happens if this operation runs twice, or if a previous run crashed halfway? If the answer is "it depends on what state was left behind," there's a missing reconciliation step.
-- Concurrency: if multiple actors can touch the same mutable state (files, branches, shared data), is access serialized structurally (locks, sequential phases, exclusive ownership), or by conventions that won't hold?
+- **边界与异常值**：空输入、`nil/undefined`、集合边界值、极端溢出、高并发访问下的表现。
+- **错误处理链路**：异常是被合理捕获并恢复、结构化向上传递，还是被无脑静默吞噬？
+- **底层细节**：差一错误（Off-by-one）、隐式类型转换陷阱、数值溢出、字符编码与时区处理。
+- **状态与生命周期**：并发竞态条件、陈旧闭包引用、悬挂指针/资源未释放。
+- **主备分支可达性**：正常业务主路径能否跑通？各类异常回退路径能否跑通？
+- **操作幂等性**：该操作若连续重复执行两次会发生什么？若上一次执行在中间某行突然崩溃会留下何种状态？若答案是“取决于上次残留的脏数据”，说明缺失了收敛与对账机制。
+- **并发访问控制**：若多个并发执行者可能触碰同一份可变状态（文件、分支、共享内存数据），该访问是否通过确定性的结构进行了严格串行化（如分布式锁、严格先后阶段、独占所有权），还是仅仅依赖脆弱不堪的口头约定？
 
-When you find a potential bug, trace the execution path. Don't just flag "this could be nil". Show the call chain that makes it nil.
+当怀疑存在逻辑 Bug 时，必须顺着代码调用链完整还原具体的执行路径；严禁仅随手批注一句“此处可能为 nil”，必须清晰证明导致其处于 nil 状态的上游调用场景。
 
-## Root Causes vs. Symptoms
+## Root Cause vs. Symptom Patching
 
-Is the code fixing the actual problem or papering over a symptom?
+本次改动是在解决产生问题的根本源头，还是仅仅在给表象症状打补丁？
 
-Answering this often requires looking beyond the changed files. Read the surrounding code (callers, callees, type definitions, sibling modules) and understand the architecture the change lives in. Use the tools available to you (Read, Grep, Glob) to explore. Follow the call chain. Read the types. Understand why the code exists before judging whether the change addresses the right layer.
+解答该问题通常需要将视线拓展至本次 diff 涉及的文件之外：通读周边关联代码（上游调用方、下游被调用方、核心类型定义、同级模块），透彻理解该改动在宏观架构中所处的准确位置。充分调用只读检索工具（Read、Grep、Glob）顺藤摸瓜，在搞清这段代码存在的根本原因后，再判定改动是否作用在正确的架构分层上。
 
-- Guard clauses that mask a deeper invariant violation
-- Retry logic that hides a broken contract
-- Type casts that silence a modeling error
-- If you see a workaround, ask: why is the workaround needed? What would a proper fix look like?
-- A fix in module A that should really be a fix in module B's contract
-- Instructions where structure would be better: if the fix is a comment saying "don't do X" or a convention someone has to remember, ask whether it could instead be a type constraint, a lint rule, or a runtime check that makes the wrong thing impossible
+- 是否通过添加局部的守卫子句，暗中掩盖了上游更深层次核心不变量遭到破坏的真相？
+- 是否通过盲目重试逻辑，试图隐藏一个本已破裂的底层契约？
+- 是否通过强制类型转换，强行让领域建模本身的缺陷在编译器面前闭嘴？
+- 遇到绕行写法（Workaround）时必须深究：为何必须写成 Workaround？在根因处根治的方案究竟应该长什么样？
+- 是否本该采用结构化约束却退化成了口头指令：若某处改动仅仅是留下了一句“请勿做 X”的注释或口头约定，推动其重构为强类型契约、Linter 静态规则或运行时强断言，使错误做法在定义层面根本无法发生。
 
 ## Structural Integrity
 
-Does the code fit well into the system it's part of?
+本次代码改动是否自然、优雅地融入了其所处的整体架构？
 
-- Boundary discipline: is validation at system boundaries, or scattered through business logic? Validate data once where it enters the system, then trust it internally.
-- Abstraction level: is the code mixing high-level orchestration with low-level detail?
-- Coupling: does this change introduce dependencies that will make future changes harder?
-- Data model fit: do the data structures match the actual access patterns? The right structure makes downstream code obvious; the wrong one fights you at every turn.
-- Bolted-on vs. integrated: was the change patched onto the existing design, or does it read as if the design always accounted for it? If the new requirement had been known from the start, would the code look like this?
-- Legacy dual-paths: does the change introduce a new API while keeping the old one alive? If there are no external consumers, migrate callers and delete the old path in the same wave. Don't leave compatibility layers that will become permanent.
+- **边界设防纪律**：输入校验是集中构筑在系统外部边界上，还是混乱地散落在业务逻辑深处？在外部数据进入系统边界处完成一次严密解析校验，随后在系统内部充分信任类型契约。
+- **抽象层级纯粹度**：代码是否混乱地将高层业务编排逻辑与底层微观细节纠缠在一起？
+- **耦合度控制**：本次改动是否引入了阻碍系统未来平滑演进的隐式耦合依赖？
+- **数据模型契合度**：数据结构是否真正契合高频数据访问模式？正确的数据结构会让下游业务逻辑水到渠成，错误的数据结构会让后续所有代码寸步难行。
+- **内生架构 vs 外挂补丁**：本次改动是打在既有设计上的粗暴外挂补丁，还是浑然天成宛如从系统设计的第一天起就已考虑周全？若该需求从第一天起就已知晓，代码会长成现在这样吗？
+- **清理遗留双轨链路**：改动若引入了新 API，是否在同一轮改动中同步迁移了所有内部调用方并彻底物理删除了旧 API？坚决避免遗留长期存在的冗余兼容层。
 
-Don't penalize simple code for lacking abstraction. Premature abstraction is worse than duplication.
+切勿因平实直白的代码缺少花哨抽象而扣分；过早引入的错误抽象远比局部重复代码更加有害。
 
 ## Verification
 
-Can you tell that this code works from reading it?
+仅凭走读当前这套代码与 diff，能否确凿证明其逻辑真实有效？
 
-- Are there tests? Do they test behavior or implementation details?
-- Are there assertions/invariants that would catch regressions?
-- If this is a bug fix: is there a test for the bug?
-- If this touches an integration boundary: is the full path tested?
-- Check the real thing, not a proxy: if the code checks liveness via file mtime or cached state instead of reading the actual value, that's a verification gap.
-- For delegated or async work: does the code verify actual output artifacts, or does it trust self-reports and summaries?
+- 是否配备了自动化测试用例？测试断言的是真实的外部业务行为，还是脆弱的内部实现细节？
+- 关键业务路径上是否构筑了能够有效拦截未来功能回归的防御性断言与不变量？
+- 若本次改动属于 Bug 修复：是否提交了能够精准稳定复现该 Bug 的失败测试（红转绿）？
+- 若改动触碰了跨服务/跨模块集成边界：是否对整条通信链路进行了端到端集成测试？
+- 检验真实客观产物，拒绝代理指标：代码是否仅仅通过文件时间戳或缓存标记来间接揣测系统存活，而非直接读取运行时的真实数值？
+- 委派任务审查：代码与工作流是去直接检验生成的客观产物，还是仅仅盲目轻信 Agent 的单方汇报摘要？
 
 ## Complexity Budget
 
-Is the complexity justified by what the code accomplishes?
+系统引入的代码复杂度，是否与其所达成的业务价值相匹配？
 
-- Code that could be simpler without losing correctness or clarity
-- Abstractions that serve only one call site
-- Configuration or parameterization for cases that don't exist yet
-- Dead code, unused imports, vestigial parameters
-- Over-engineering: "just in case" code paths with no current callers
-- Obsolete compatibility paths kept alive for transitional stability that's no longer needed. If the migration is done, delete the scaffolding
-- Does the user experience justify the complexity? Every feature, control, and option should earn its place. Half-finished features are worse than missing ones.
+- 是否存在在完全不损失正确性与清晰度的前提下，本可以显著更简约的代码实现？
+- 是否存在仅服务于单一调用点的过度抽象？
+- 是否存在为虚无缥缈、尚不存在的未来场景预留的过度配置化与泛型参数化？
+- 是否存在死代码、未使用的无用 import、冗余残留参数？
+- 是否存在为了过渡期平滑而引入、如今迁移已完毕却未及时清理的脚手架残骸？
+- 业务体验是否配得上所引入的复杂度？每个功能、每个配置开关都必须证明其存在的不可替代性。
 
-Simpler is better unless simpler is wrong. Three lines of duplication beat a premature abstraction.
+越简约越优良，除非极致简约会导致逻辑错误。三行直白的局部代码远胜过一个过早引入的复杂抽象。
 
 ## Security
 
-Only flag security issues you can actually trace through the code. "This could be an injection vector" without showing the input path is not useful.
+仅标记在代码中能够确凿推演出输入可达链路的真实安全隐患；缺乏可达证据的凭空质疑毫无价值。
 
-- User input flowing to dangerous sinks (SQL, shell, eval, innerHTML) without sanitization
-- Authentication/authorization gaps in new endpoints
-- Secrets in code, logs, or error messages
-- TOCTOU (time-of-check-time-of-use) in security-critical paths
+- 外部非受信输入未经深度转义与净化，直接流向危险接收槽（SQL 拼接、Shell 命令执行、动态 eval、HTML/innerHTML 渲染）。
+- 全新接口端点上的身份认证（Authentication）与权限鉴权（Authorization）漏洞。
+- 源码、构建产物、日志打印或异常报错信息中泄漏的敏感密钥与凭据。
+- 关键安全校验链路上的 TOCTOU（Time-of-Check to Time-of-Use）竞态漏洞。

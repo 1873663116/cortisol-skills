@@ -1,22 +1,22 @@
 ---
 name: principle-sequence-verifiable-units
-description: "Apply to multi-step work (sweeps, migrations, runs of similar edits) and to how you stack commits and PRs. Break work into small units that each end in a verifiable state, check each before the next, and order delivery so the sequence proves itself to a reviewer."
+description: "适用于批量扫改、整体迁移等连续编辑任务，以及规划 commit 与 PR 的堆叠层级。将任务切分为各自自带检查闭环的细粒度单元，步步为营、逐一验证，让执行序列本身形成严密的证据链向评审者自证。"
 disable-model-invocation: true
 ---
 
-# Sequence work into verifiable units
+# 将工作划分为闭环可验证单元（Sequence Work into Verifiable Units）
 
-Order work as a sequence of small units, each ending in a state you can check, and don't advance until the current one is green. The same discipline runs at two altitudes, how you execute and how you deliver.
+将复杂任务拆解编排为一系列紧凑的小巧单元，确保每个细分单元均以一个明确可程序化检查的验证闭环收尾；当前单元测试未全绿通过前，严禁盲目推进至下一个单元。该纪律在两个层次上发挥关键作用：一是你自身的开发执行过程，二是你交付产物的呈现逻辑。
 
-**Why:** A break caught at the unit that caused it is cheap to localize. A break caught after a batch is buried, and you have already built further on a broken base. Sequencing those same units into a delivery a reviewer can replay turns "trust me" into "watch it go red, then green."
+**核心理由。** 在引入缺陷的最小单元处即刻捕获问题，排查与修复成本极低；而若将一堆改动打包堆叠后再做统一排查，不仅会将缺陷深埋在繁杂的 diff 之中，更意味着你后续的所有工作都是在破损的地基上盲目搭建。将这些单元逻辑编排为评审者可轻松重放的提交序列，能够将口头上的“请相信我已改好”转变为无可辩驳的“亲眼见证测试由红转绿”。
 
-**Execution.** In a sweep, migration, or any run of similar edits, verify each change before starting the next. Never batch the edits and verify once at the end. Each unit is a before/after bracket: known-good state, one change, run the check, then proceed. Rebase onto clean trunk first so every check measures against the real baseline. When a lever does the edits, the per-unit check is nearly free; run it anyway.
+**执行层面。** 在进行批量重构、全局迁移或一系列高度相似的代码改动时，每完成一处局部编辑必须立即通过验证，确认通过后再开启下一处。严禁将一堆编辑改动集中积压到最后才进行统一验证。每个细分单元均构成一组清晰的前后对照：确立已知良好基线 → 实施单点精准改动 → 运行自动化检查闭环 → 推进至下一单元。在开展工作前先 rebase 到干净的主干分支，确保每次检查均基于真实的基线状态。当批量改动通过自动化杠杆工具执行时，单单元的验证成本极低，更应坚持严格逐一验证。
 
-**Delivery.** Stack commits and PRs in the order that proves the work. The canonical shape is the failing test first, then the fix on top. The first unit shows the bug is real (red), the next shows it resolved (green), so a reviewer sees both the problem and the proof. Other story orders are a subtraction before the reshape, a baseline capture before the treatment, the scaffold before the feature. Each commit lands on its own and the sequence reads as an argument.
+**交付层面。** 按照能够自解释并证明工作正确性的逻辑顺序堆叠 Git commit 与 PR。最经典的典范形态是：首先提交能够稳定触发问题的失败测试（红态），紧接着在其上提交对应的修复实现（绿态）。首个提交证明了 Bug 的真实存在（红），下一个提交证明了该问题已被彻底修复（绿），评审者因此能同时看清问题全貌与修复证据。其他严密的叙事序列还包括：在重塑结构前先单独提交做减法的清理改动；在引入优化改动前先记录基线数据；在实现具体业务功能前先单独落地基础设施脚手架。每个 commit 均具备独立合入主线的能力，整个提交序列宛如一篇逻辑严密的证明论文。
 
-**Pattern:**
-- Pick the smallest unit that ends in a check: an edit plus its test, or a commit that stands alone.
-- Verify before advancing. Red to green per unit, never deferred to a final batch.
-- Order the units so the sequence builds confidence on its own, for you while executing and for a reviewer reading the stack.
+**核心做法：**
+- 选取以单次确定性检查收尾的最小工作单元：单次代码修改及其配套测试，或一个能够独立成立的 commit。
+- 坚持验证通过后再向前推进。每个单元必须完整走完“从红到绿”的验证闭环，严禁推迟集中处理。
+- 精心编排单元交付顺序，使提交序列本身构建起强大的自证可信度——对正在执行任务的你如此，对阅读代码 stack 的评审者亦如此。
 
-The sequencing complement to the **prove-it-works** principle skill, which keeps each check real, and the **build-the-lever** principle skill, which makes the per-unit check cheap.
+本原则在编排调度层面上是对[用实际运行证明有效](../principle-prove-it-works/SKILL.md)原则的重要补充（后者确保每一次单点检查真实可靠）；同时亦是对[打造杠杆工具](../principle-build-the-lever/SKILL.md)原则的有力支撑（后者大幅压降单单元验证的边际执行成本）。

@@ -1,121 +1,111 @@
 ---
 name: how
-description: "Use for \"how does X work\", code walkthroughs before changing something, and placement / ownership / layering questions (\"where should this live\", \"which package owns this\", \"is this the right layer\"). Explains subsystem architecture, runtime flow, onboarding mental models. Can critique architecture. Use why for motivation."
+description: "用于“X 是怎么运作的”这类技术咨询、改动代码前的系统走读，以及模块归属、所有权、系统分层的判定（如“这段逻辑该放在哪”“哪个包应当拥有它”“这一层抽象是否合理”）。深入讲解子系统架构、运行时核心流程、上手所需的心智模型；亦可对既有架构展开深度批评。针对历史设计动机与权衡决策请使用 why。"
 ---
 
 # How
 
-Explore the codebase to answer "how does X work?" questions. Produce clear architectural explanations at the level of a senior engineer onboarding onto a subsystem. Enough to build a working mental model, not annotated source code.
+深度探索代码库，精准解答“X 是如何运作的”等复杂架构问题。产出的架构讲解必须达到一位资深架构师快速上手某个核心子系统所需的专业水准。核心目标是帮助阅读者建立起一套坚实、准确且可用的运行时心智模型，而非对源码进行枯燥的逐行翻译。
 
-Two modes:
+支持两种运作模式：
 
-1. **Explain** (default). Explore the codebase and produce a clear explanation
-2. **Critique.** Explain first, then spawn multiple models to independently identify architectural issues
+1. **Explainer Mode（默认）**：全面探索代码库，产出一份脉络清晰、见解深刻的架构讲解。
+2. **Critique Mode**：先产出架构讲解，随后跨多个模型供应商并发派出独立批评者，深度挖掘既有架构的设计缺陷。
 
-## Explain Mode
+## 讲解模式
 
-### Step 1. Understand the Question and Assess Complexity
+### 第 1 步：理解诉求并评估任务复杂度
 
-Parse what the user is asking about:
+精准识别用户的真实提问意图：
+- “限流器是如何工作的” → 聚焦于单一子系统的内部机制。
+- “按量计费在系统中是如何流转处理的” → 聚焦于跨模块的完整业务功能链路。
+- “认证服务是如何组织的” → 聚焦于宏观架构概览与分层拓扑。
+- “带我走一遍用户提交表单之后的全过程” → 聚焦于动态运行时的数据流追踪。
 
-- "How does the rate limiter work?", a subsystem
-- "How do we handle billing for on-demand usage?", a feature flow
-- "How is the auth service structured?", an architectural overview
-- "Walk me through what happens when a user submits a form", a runtime trace
+清晰划定探索边界。若需求意图存在一定模糊性，明确陈述你最具把握的理解假设，随后立即展开探索，切勿频繁发问阻塞流程；若方向发生偏差，由用户在后续异步纠偏。
 
-Identify the scope. If ambiguous, state your best-guess interpretation before exploring. Don't ask. Let the user redirect if you're off.
+**评估任务复杂度并选择执行策略：**
 
-**Assess complexity to decide the approach:**
+- **轻量场景**（单一模块、小型工具库，或针对“函数 X 是如何实现的”等局部窄问题）：跳过独立的探索者，由讲解者单趟完成代码探索与讲解输出，直接进入第 2b 步。
+- **复杂场景**（跨多文件/多服务的复杂子系统、横切业务功能、全系统宏观架构概览）：先并发派发探索者摸底，随后交由讲解者综合产出，进入第 2a 步。
 
-- **Simple** (a single module, a small utility, a narrow question like "how does function X work"): skip explorer agents; the explainer explores and explains in a single pass. Go to Step 2b.
-- **Complex** (a subsystem spanning multiple files/services, a cross-cutting feature, a full architectural overview): spawn parallel explorer agents first, then hand off to the explainer. Go to Step 2a.
+存疑时优先从轻量策略起步；若讲解者在探索时发现涉及面极广，可随时升级派发并发探索者。
 
-When in doubt, lean simple. You can always spawn explorers if the explainer hits a wall.
+### 第 2a 步：并发探索（复杂场景）
 
-### Step 2a. Explore (complex questions only)
+将复杂问题解构为 2 到 4 个互补且正交的探索切片，使各个探索者分工明确、杜绝低效重复。以“限流器是如何工作的”为例：
+- 探索者 1：核心数据模型与存储状态管理。
+- 探索者 2：请求拦截链路与限流规则执行引擎。
+- 探索者 3：动态配置下发与可观测性监控指标基础设施。
 
-Decompose the question into 2-4 parallel exploration angles, each a distinct slice of the subsystem so explorers don't duplicate work. Example split for "how does the rate limiter work?":
+具体的切分维度取决于问题本身的领域特性。窄问题派发 2 个探索者即可；庞大子系统最多派发 4 个。
 
-- Explorer 1: data model and state management
-- Explorer 2: request path and enforcement
-- Explorer 3: configuration and metrics infrastructure
+查阅 **dispatch** 技能规范，选用其 `Bulk` 类别，经 **orchestration** 技能并发派发所有探索者。
 
-The right decomposition depends on the question. Use your judgment. Narrow questions: 2 explorers is fine. Broad subsystems: up to 4.
+每个探索者的基础 Prompt 均基于 `references/explorer-prompt.md` 构建，并注入其专属的切片探索维度。每个探索者均须遵循：
+- 由宏观到微观：使用 Glob 快速定位关键目录与文件，使用 Grep 检索核心类型、接口与类定义。
+- 顺藤摸瓜：从入口点出发，严密追踪完整的调用链与数据流（调用方、被调用方、数据转换、类型约束）。
+- 深入阅读源码真实实现，严禁仅凭文件名或符号名凭空臆测。
+- 持续深入追踪，直至能够完整、无歧义地讲清“从输入到输出”或“从事件触发到最终生效”的全链路细节。
+- 重点记录出人意料的特殊处理、历史包袱、以及容易使新接手者踩坑的设计细节。
 
-Read the **dispatch** skill. Call `delegate_to_agent` once per angle using the agent type assigned to the `Bulk` class. Issue every call before collecting the returned `task_id`s with `get_delegation_status`. Use the workspace's absolute path as `working_dir`.
+任务指令中必须显式注明 `Do not write or modify files`（只读探索，严禁修改任何文件）。
 
-Each explorer gets the same base prompt from `references/explorer-prompt.md` plus a specific exploration angle naming its slice. Each explorer should:
-- Start broad: Glob for relevant directories, Grep for key types/interfaces/class names
-- Follow the thread: from an entry point, trace the call chain (callers, callees, data flow, type definitions)
-- Read the actual code, don't guess from file names
-- Stop when it can describe the full path from input to output (or trigger to effect) without hand-waving any step
-- Note things that are surprising, non-obvious, or that a newcomer would get wrong
+每个探索者返回结构化的事实发现：识别的核心组件、追踪出的执行流程、通读的文件清单、以及不言自明的关键细节。探索者之间的局部重叠属正常现象，由后续讲解者统一调和对齐。
 
-The local delegate has no read-only mode. Put `Do not write or modify files` in every explorer task.
+随后进入第 3 步。
 
-Each explorer returns structured findings: components found, flow traced, files read, anything non-obvious. Overlap between explorers is fine; the explainer reconciles.
+### 第 2b 步：直接讲解（轻量场景）
 
-Then proceed to Step 3.
+查阅 **dispatch** 技能规范，选用其 `Judgment` 类别派发讲解者。任务指令中显式注明 `Do not write or modify files`。
 
-### Step 2b. Direct Explain (simple questions)
+讲解者自主完成代码库探索（结合 Glob、Grep、Read），直接输出完整的架构讲解。格式与风格遵循 `references/explainer-prompt.md`，直接进入第 4 步。
 
-Read the **dispatch** skill and call `delegate_to_agent` using the agent type assigned to the `Judgment` class. Use the workspace's absolute path as `working_dir`, keep the returned `task_id`, and collect it with `get_delegation_status`. Put `Do not write or modify files` in the task because the local delegate has no read-only mode.
+### 第 3 步：全局综合（复杂场景）
 
-The agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Read `references/explainer-prompt.md` for the communication style and output format. Same structure, just no explorer findings as input.
+在所有探索者完成任务返回后，查阅 **dispatch** 技能规范，选用其 `Judgment` 类别派发综合讲解者。任务指令中显式注明 `Do not write or modify files`。
 
-Proceed to Step 4.
+讲解者接收全部探索者的事实发现，编写面向人类工程师的高质量架构讲解（输出格式见下文，完整 Prompt 模板参见 `references/explainer-prompt.md`）。讲解者负责调和重叠视角、消除局部矛盾，将碎片化的探索切片熔铸为一幅浑然一体的架构全景图。
 
-### Step 3. Synthesize (complex questions only)
+### 第 4 步：呈现结果
 
-Once all explorers return, read the **dispatch** skill and call `delegate_to_agent` using the agent type assigned to the `Judgment` class. Use the workspace's absolute path as `working_dir`, keep the returned `task_id`, and collect it with `get_delegation_status`. Put `Do not write or modify files` in the task because the local delegate has no read-only mode.
+将讲解者的产出直接呈现给用户。可根据当前会话上下文做微调润色，但严禁大幅删改核心技术分析。
 
-The explainer gets all explorers' findings and writes the human-facing explanation (output format below). Read `references/explainer-prompt.md` for the full prompt template. The explainer reconciles overlapping findings, resolves contradictions, and weaves the slices into a unified picture.
+### 讲解输出格式规范
 
-### Step 4. Present
+输出结构需根据具体问题灵活调整，标准结构如下：
 
-Present the explainer's output to the user. You may lightly edit for clarity or add context from the conversation, but don't substantially rewrite. The explainer's communication is the product.
+- **Overview**：1 到 2 段。清晰阐述该子系统是什么、核心职责、以及存在的根本原因；使读者仅读本节即可判断是否有必要继续深入。
+- **Key Concepts**：理解后续内容所必需的关键类型、核心服务或重要抽象；给出精炼定义，不求面面俱到，只列核心要素。
+- **How It Works**：讲解的核心主体。完整剖析动态流程：由何种事件触发、经历了哪些确定性步骤、数据流向何处、核心业务决策点分布在哪里。使用平实精准的书面语，禁止写空洞伪代码；准确指引具体的文件路径与函数名以便读者查阅，坚决避免无谓粘贴大段源码（除非某几行代码对论证核心逻辑不可或缺）。
+- **Where Things Live**：相关核心文件与目录的精简地图，仅列出在此处着手开发所需的关键入口。
+- **Gotchas**：不言自明或出乎意料的边缘行为、引发古怪写法的历史背景、以及易踩坑的Sharp edges。
 
-### Output Format
+## 批评模式
 
-Follow this structure, adapted to the question. Not every section is needed for every question.
+当用户不仅需要理解系统，还显式要求找出既有架构的设计缺陷、坏味道或重构改进方向时，触发本模式。
 
-**Overview.** 1-2 paragraphs. What it is, what it does, why it exists. Enough to decide whether to keep reading.
+### 第 1 步：先行讲解
 
-**Key Concepts.** The important types, services, or abstractions. Brief definition of each. Not exhaustive, just the ones needed to understand the rest.
+完整走通上述讲解流程（第 1 到 4 步）。对一套架构展开客观批评的前提，是必须先透彻理解其现实运作机理。
 
-**How It Works.** The core of the explanation. Walk through the flow: what triggers it, what happens step by step, where data goes, the decision points. Prose, not pseudocode. Reference specific files and functions so the reader can go look, but don't dump code blocks unless a snippet is genuinely necessary.
+### 第 2 步：并发派发独立批评者
 
-**Where Things Live.** A brief map of the relevant files/directories. Not every file, just the ones needed to start working in this area.
+在架构讲解产出后，查阅 **dispatch** 技能规范，选用其 `Panel` 类别。跨多个不同模型供应商并发派发批评者。任务指令中显式注明 `Do not write or modify files`。
 
-**Gotchas.** Non-obvious or surprising things that would trip someone up. Historical context that explains why something looks weird. Known sharp edges.
+Prompt 模板参见 `references/critic-prompt.md`。每个批评者均接收：
+1. 第 1 步产出的架构讲解文档（避免重复低效探索）。
+2. 相关核心源码文件路径清单（以便亲自查阅真实实现）。
+3. 来自 `references/critique-rubric.md` 的多维度架构批评量规。
 
-## Critique Mode
+### 第 3 步：主责工程师工程裁决
 
-Triggered when the user asks for architectural issues, problems, or improvements, not just understanding.
+采用与 interrogate 技能完全一致的工程裁决框架。你是一名务实的 Tech Lead，而非无脑的机械汇总者。
 
-### Step 1. Explain First
+将批评发现归类分流：
+- **Must address**：确实存在、且在当前阶段严重阻碍演进或危害稳定性的实质架构缺陷。
+- **Consider**：客观存在的设计妥协，但其重构收益与改造成本尚需权衡。
+- **Noted**：观察属实，但目前优先级较低或属于过早优化。
+- **Dismissed**：判断失误、缺乏业务上下文、或纯属个人代码审美偏好。
 
-Run the full explain flow above (Steps 1-4). You must understand the architecture before critiquing it.
-
-### Step 2. Spawn Critics
-
-After the explanation is complete, read the **dispatch** skill and use its `Panel` class. Call `delegate_to_agent` once per vendor seat, use the workspace's absolute path as `working_dir`, and issue every call before collecting the returned `task_id`s with `get_delegation_status`.
-
-The local delegate has no read-only mode. Put `Do not write or modify files` in every critic task.
-
-Read `references/critic-prompt.md` for the prompt template. Each critic gets:
-1. The explanation from Step 1 (so they don't re-explore)
-2. The relevant file paths (so they can read the actual code)
-3. The architectural critique rubric from `references/critique-rubric.md`
-
-### Step 3. Lead Judgment
-
-Same framework as the interrogate skill. You're a pragmatic lead, not an aggregator.
-
-Categorize findings:
-- **Act on.** Architectural problems worth fixing now
-- **Consider.** Real concerns, but the cost/benefit is unclear
-- **Noted.** Valid observations, low priority
-- **Dismissed.** Wrong, missing context, or style preference
-
-Present the explanation first (from Step 1), then the critique verdict below it. The explanation should stand on its own; someone who just wants to understand the system shouldn't wade through critique.
+首先完整呈现第 1 步的架构讲解，随后在其下方附带架构批评与裁决结论。架构讲解部分必须保持自洽独立，确保仅需理解系统的读者无需被迫阅读批评内容。

@@ -1,55 +1,48 @@
 # Notion Docs
 
-## What this source contains
+## 本数据源包含的资产
 
-- PRDs (product requirement documents)
-- Technical specs and RFCs
-- Architectural decision records (ADRs)
-- Meeting notes from design reviews
-- Team pages with domain context
-- Postmortems from incidents
-- Runbooks that may explain defensive code
-- Strategy documents that set priorities
+- PRD（产品需求文档）
+- 技术设计方案与 RFC（技术征求意见稿）
+- ADR（架构决策记录）
+- 方案评审会与技术委员会会议纪要
+- 团队业务领域知识库与上下文梳理
+- 事故复盘分析报告（Postmortems）
+- 运维排障手册（Runbooks，常能解释为何存在防御性代码）
+- 战略规划与优先级决策文档
 
-Notion is where "why" often lives in long-form before it becomes code. A significant feature usually has a doc.
+Notion 是技术设计在转化为具体代码前最详尽的长篇背景沉淀地。重大功能几乎都会对应一份设计文档。
 
-## How to search it
+## 常用检索手段
 
-Use the Notion MCP.
+使用 Notion MCP 工具：
 
-1. **Keyword searches with `notion-search`.** Try:
-   - The feature name
-   - Key symbols / class names from the target code
-   - Author handles (design docs are often authored before the code lands)
-   - Error strings or user-visible terms
-   - Time-bounded queries if you know when the code shipped
-2. **Fetch candidate pages with `notion-fetch`.** Read the full content, not the preview; rationale is often buried mid-document.
-3. **Follow backlinks and child pages.** Design docs often have sub-pages for alternatives considered, appendices, or implementation notes.
-4. **Check related databases.** `notion-query-data-sources` and `notion-query-meeting-notes` can surface meeting notes that discussed the decision.
-5. **Search author-specific spaces.** If the PR author has a personal notebook (common at some companies), it may hold exploratory thinking that preceded the code.
+1. **多维度关键词检索**：使用 `notion-search` 检索功能名称、核心类名/符号、作者账号（设计文档往往由 PR 作者在编码前撰写）、报错特征文本或带时间范围的查询。
+2. **全文调取与精读**：使用 `notion-fetch` 读取候选文档全文，设计动机往往深埋在正文中段。
+3. **追踪双向链接与子页面**：技术方案常包含关于“备选方案对比”、“技术选型权衡”等子页面或附录。
+4. **查阅会议纪要数据库**：通过 `notion-query-meeting-notes` 检索讨论该项决策的会议记录。
+5. **检索作者个人工作空间**：部分研发同学在编码前会在个人笔记本中沉淀技术推演。
 
-## What good evidence looks like here
+## 典型的高价值证据特征
 
-- A PRD with a "Problem statement" or "Motivation" section that matches the target code's purpose
-- An "Alternatives considered" or "Rejected approaches" section
-- A postmortem that names the target code as the fix for a specific incident
-- Meeting notes that record "we decided X because Y" and tie to the same author/date range as the PR
-- An ADR template filled out non-trivially (status, context, decision, consequences)
+- PRD 中的“痛点背景（Problem Statement）”或“立项动机（Motivation）”章节与目标代码诉求高度契合。
+- “被否决的备选方案（Alternatives Considered）”章节详细记录了为何未采用其他实现方式。
+- 事故复盘文档将目标代码明确列为某次故障的改进措施。
+- 会议纪要明确记载“我们决定采用方案 X 因为 Y”，且时间与作者与 PR 吻合。
 
-## Common pitfalls
+## 常见陷阱与注意事项
 
-- **Outdated docs.** Specs are often written before implementation and not updated; the doc may describe a plan that changed. Cross-check against the actual PR.
-- **Doc vs. reality drift.** A spec may say "we'll do X" but the code actually does Y. Flag the divergence; the synthesizer will surface the contradiction.
-- **Boilerplate templates.** Some orgs require a "Why" section that gets filled with fluff. Look for specificity.
-- **Unlinked docs.** The most relevant doc may not be linked from anywhere. Broad keyword searches help.
-- **Multiple drafts.** If a topic has multiple docs, find the one that was finalized or most recently updated. Check dates.
-- **Access-restricted pages.** If you can't access a page, note it as a gap.
+- **文档年久失修**：设计方案常在实现前编写，中途方案变更往往未同步回写文档，务必与最终 PR 代码比对。
+- **文档与代码现实脱节**：方案声称“采用方案 X”，但代码实际实现了 Y，如实暴露该分歧。
+- **模板化凑字废话**：部分团队强制要求填写“Why”，导致充斥着套话，必须寻找具体的事实依据。
+- **多版本草稿混淆**：查阅最终定稿或最新更新的版本，核对修改时间。
+- **页面权限受限**：若页面无法访问，如实记录为盲区。
 
-## What to return
+## 输出要求
 
-For each relevant doc:
-- Title and URL
-- Authors and last-updated date
-- The motivation text (verbatim quote), with page/section location
-- Relevant linked pages (so the synthesizer can cite them)
-- Whether the doc was finalized or draft
+针对相关文档输出：
+- 文档标题与 URL
+- 作者与最后更新日期
+- 原文摘录的动机段落（附具体章节位置）
+- 关联的关键子页面
+- 属于正式定稿还是早期草案

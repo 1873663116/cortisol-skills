@@ -1,17 +1,17 @@
 ---
 name: principle-guard-the-context-window
-description: "Apply when context is filling up: large outputs, long files, repeated reads, fan-out planning. Route bulk to subagents; keep summaries in the main thread, not raw payloads."
+description: "上下文趋于饱和时使用：面对超大输出、冗长文件、高频重复读取或大规模扇出规划。将大体积信息处理路由给子 Agent，主线程仅保留高价值提炼摘要，严禁内联倾倒原始载荷。"
 disable-model-invocation: true
 ---
 
-# Guard the Context Window
+# 守卫上下文窗口（Guard the Context Window）
 
-The context window is finite and non-renewable within a session. Every token that enters should earn its place.
+LLM 上下文窗口是极其宝贵的硬性约束资源，且在单次会话周期内不可再生。进入上下文的每一个 Token 都必须能够证明其存在的实质价值。
 
-**Why:** Context overflow degrades reasoning quality, creates compression artifacts, and halts progress. Unlike compute or time, context spent inside a session cannot be reclaimed.
+**核心理由。** 上下文窗口一旦发生严重溢出，会导致底层模型的逻辑推理质量急剧衰减、触发不可逆的上下文摘要压缩失真，并最终导致任务推进陷入停滞。与算力或时间不同，在单次会话中被无效信息消耗掉的上下文空间无法无损收回。
 
-**Pattern:**
-- **Isolate large payloads.** Route verbose outputs, screenshots, and large documents to subagents. The main context gets summaries, not raw data.
-- **Don't read what you won't use.** Read selectively based on relevance. If a file isn't needed for the current task, skip it.
-- **Keep frequently used content inline.** Templates and references used on every invocation belong in the skill file, not in separate files that cost a read each time.
-- **Size phases and cap scope.** Limit files per phase, set turn budgets, account for mechanism costs.
+**实践规范：**
+- **严格隔离大体积原始数据。** 将冗长的命令行输出、大型数据日志、大尺寸截图以及超长技术文档委派给子 Agent 解析。主上下文线程仅接收提炼收敛后的核心摘要与结构化结论，严禁在主线程中内联倾倒原始数据载荷。
+- **与当前任务无关的内容坚决不读。** 严格按照任务强相关性进行有针对性的按需阅读。当前开发任务无需依赖的文件坚决跳过。
+- **高频使用的关键信息就近内联。** 每次调用均高度依赖的核心模板与关键参考资料，应直接内联在技能定义文件中，而非拆散在每次都需重新读取的独立外部文件中。
+- **合理控制阶段粒度，设定严密边界上限。** 严格限制单个执行阶段涉及的文件数量，设定合理的执行轮次预算，并将机制本身的开销一并纳入统筹考量。

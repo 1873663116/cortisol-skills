@@ -1,35 +1,35 @@
-# Rationale template
+# Rationale Template
 
-The prose that ships alongside the type sketch. One page. Sentence-case headings, no boilerplate. Replace the italic notes with actual content.
+随架构类型草图一同交付的技术理由说明文档。篇幅控制在一页左右。语言精练客观，聚焦实质内容。将文档中的斜体占位提示替换为具体的实质性工程内容。
 
 ## Problem
 
-*One paragraph. What we're trying to do, and what about the existing system or constraints makes the shape non-obvious. If [Phase A](../SKILL.md#phase-a-ground-the-problem) surfaced constraints the design must honor (existing types to interop with, callers we can't break, invariants that crossed our boundary), name them here so the reader sees the same constraints you saw.*
+*一段精炼文本：明确阐述我们意图解决的核心业务与技术问题，并清晰点明既有系统架构或外部客观约束中，是哪些具体因素导致该模块的设计形态并非显而易见。若 [Phase A](../SKILL.md#phase-a-ground-the-problem) 梳理出了本设计必须严格遵守的强约束（如必须兼容的既有强类型、绝不可破坏的调用方契约、跨越系统边界的核心业务不变量），必须在此处明确点名，使后续阅读者能够与你站在完全相同的约束边界内审视设计。*
 
 ## Usage (caller's view)
 
-*Write this first, before the type sketch. Show the README or quickstart the consumer reads, plus two or three realistic call sites in their own code. What they import, what they call, what comes back. The type sketch in [Shape](#shape) is derived from this. The two must agree; when they diverge, reconcile the sketch to the usage, not the reverse. The caller's experience is the spec. The types serve it.*
+*在书写任何具体类型草图之前，必须率先完成本章节。展示供调用方直接阅读的 README 式快速上手指引，并列出 2 到 3 个在实际业务调用方代码中的真实调用用例：包括他们将 import 哪些符号、以何种参数调用核心接口、将获得何种返回值结构。[Shape](#shape) 章节中的核心类型草图必须严格由本章节推导而来。二者必须保持绝对一致；若后续出现冲突，必须坚决将草图对齐修正至调用端体验，而非倒逼调用端妥协。调用端的优雅消费体验即是最高需求规格，内部类型定义全力为其服务。*
 
 ## Shape
 
-*The recommended architecture. Data structures first; then how data flows through the signatures. Name the load-bearing decisions. State which invariants are encoded in types, where validation lives, and what the system deliberately does not do. Judge interface depth explicitly. State what complexity the public surface hides, what remains exposed to callers, and why the interface is no larger than needed. Cite the principle behind each decision (e.g., `per boundary-discipline`); don't restate it.*
+*推荐的系统架构形态。首先阐述核心数据结构的组织设计，随后阐述数据流是如何在各个函数签名之间流转传递。重点点明承担系统核心承重责任的关键技术决策：说明哪些业务不变量已被深度编码进强类型系统中、输入校验逻辑构筑在何处边界、系统经过深思熟虑后刻意决定不做什么。明确评估接口的“模块深度”：阐明精简的公开接口究竟封装了哪些内部复杂度、将哪些必要的控制权留给了调用方，以及为何该接口没有多余的膨胀设计。对每一项关键架构决策注明其背后的工程原则（如 `遵循 boundary-discipline 原则`），但无需重复展开原则正文。*
 
 ## Synthesis decision
 
-*Filled in by [arena](../../arena/SKILL.md). Records which candidate became the base and why, what was adapted from each of the others, and what was rejected and why.*
+*由 [arena](../../arena/SKILL.md) 最终裁决填写。详细记录哪一份候选方案被选定为最终的底稿及其核心理由、从其他落选方案中各自吸收嫁接了哪些精妙局部设计、驳回了哪些设计方案及其背后的确凿技术理由。*
 
 ## Tradeoffs accepted
 
-*One bullet per tradeoff the chosen shape makes. Form: "we accept X in exchange for Y." Name anything a future reader might mistake for an oversight, including things that look like premature optimization or premature simplification.*
+*清晰列出最终选定的架构形态所主动做出的每一项技术权衡与取舍。统一采用“我们主动接受 X 带来的代价，以换取 Y 带来的核心收益”的标准句式。凡是未来维护者极易误读为“疏忽遗漏”的关键点均须在此逐一说明，包括那些看似过早优化或看似过早简化的设计考量。*
 
 ## Alternatives considered
 
-*Required. Name at least one concrete alternative shape, with one line on why it lost. Judge each alternative on interface depth, not implementation simplicity alone. Name the complexity it exposes to callers and the complexity it hides. Two or three alternatives belong here when the design space had real contenders. One is fine when the constraints forced the answer, with the conclusion phrased as "this was the only viable shape because..." Avoid listing flavors of the same shape. This section covers design alternatives the chosen shape considered and rejected, not other runner candidates.*
+*必填项。必须至少指名一个具体且具备竞争力的备选设计形态，并用单行精炼阐述其最终落选的核心技术原因。评估每个备选方案时必须基于“接口深度”进行深度审问，而非仅看其内部实现是否省事；明确指出该备选方案向调用方暴露了何种多余的复杂度，以及其未能有效封装哪些核心逻辑。当设计空间中确实存在多个强劲竞争方案时，应在此处展开 2 到 3 个备选项的比选；若受客观硬性约束限制导致仅存在唯一定解，列出一个亦可，结论表述为“该形态为当前客观约束下的唯一可行解，核心原因在于……”。严禁列举同一套骨架下的琐碎变体。本章节专注于分析当前形态在演进探索过程中考虑过并最终否决的架构替代路径，而非简单复述其他 Runner 的原始提案。*
 
 ## Open questions and risks
 
-*Things you noticed during the sketch that the human needs to weigh in on, and risks worth flagging before implementation starts. Phrase as questions, not assertions, so the human's answer is the resolution rather than a comment.*
+*在草图设计阶段发现的、需要人类工程师最终定夺的业务决策事项，以及在正式编码前值得重点标出的潜在技术风险。全部统一书写为明确的问题句式而非单方断言，确保人类给出的答复能够直接作为最终定论沉淀，而非引发无休止的讨论。*
 
 ## Next implementation step
 
-*The first thing to build against the sketch. One sentence. What you'd start writing immediately after synthesis (or after Phase D sign-off, if a checkpoint was opted into).*
+*依照当前架构草图所需构建的首个最小交付物。用一句话清晰说明：在完成方案综合裁决后（若开启了人工检查点，则为 Phase D 签字通过后）你将立即着手编写的具体代码内容。*

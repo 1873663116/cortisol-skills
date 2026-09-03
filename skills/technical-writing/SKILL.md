@@ -1,130 +1,100 @@
 ---
 name: technical-writing
-description: "Layered technical-writing standard: Diátaxis structure, Google developer style sentences, STE instruction rules, Global English syntax. Use for /technical-writing or when writing or reviewing docs, RFCs, readmes, PR descriptions, or commit messages."
+description: "分层的专业技术写作标准，涵盖 Diátaxis 体系结构、Google 开发者风格句式、STE 简明技术英文指令规则、以及 Global English 全球化精确句法。用于 /technical-writing，或撰写与评审技术文档、RFC、README、PR 描述与 Commit 信息时。"
 disable-model-invocation: true
 ---
 
-# Technical writing
+# Technical Writing
 
-The goal is writing a tired engineer understands on the first read. Four layers get you there, one question each: what kind of document is this, how do sentences address the reader, how much does each sentence carry, and can any sentence be read two ways. Apply all four.
+核心目标：让一位疲惫不堪的工程师在读第一遍时就能准确无误地理解。通过四个清晰的层次构建高质量文档，每层回答一个核心问题：这是哪一类文档？句子如何称呼读者？每句话承载多少信息量？是否存在可能被解读出歧义的表达？四个层次必须通盘严格应用。
 
-Three rules sit above the layers:
+在四层规范之上，存在三条最高准则：
 
-- **Cut every word that does no work.** If the sentence survives without a word, the word goes. "In order to" is "to". "It is important to note that" is nothing.
-- **Use the short, everyday word.** "Use", not "utilize". "Help", not "facilitate". "Do", not "perform". A long word has to buy its length with precision.
-- **When a rule makes a sentence worse, fix the sentence another way or leave it alone.** The rules serve the reader. A sentence that follows every rule and sounds like a machine wrote it has failed.
+- **坚决删掉每一个不干活的废词。** 若一个词去掉后句子依然完全立得住，该词就必须物理删除。“In order to”就是“to”；“It is important to note that”没有任何实质信息，整句删除。
+- **优先使用短小、日常的直接词汇。** 用“use”而非“utilize”；用“help”而非“facilitate”；用“do”而非“perform”。使用长词必须能够以无可替代的精确度证明其长度的必要性。
+- **若某条死板规则让句子表达劣化，换一种方式重构该句子，或直接保持原样。** 规则全力服务于读者。一个机械遵守了所有字面规则、读起来却宛如机器生硬拼凑的句子，在根本上已经失败。
 
-The codebase is the word list. Write the real symbol, file, flag, or command name, not a synonym or a description of it.
+代码库本身即是权威词表：直接书写真实的符号名、文件名、CLI 参数名或命令名，严禁使用模糊的同义词或笼统的口头描述。
 
-Don't invent jargon. Use the words a developer would say out loud: "move", "delete", "a budget that only decreases", not "evacuate", "ratchet", or "endgame". A named pattern is fine when the doc says what it means the first time. Add new offenders to `unslop`'s abstract-metaphor rule with their replacement.
+严禁生造晦涩行话。使用开发者当面交流时会念出声的真实词汇（如“move”、“delete”、“a budget that only decreases”），而非“evacuate”、“ratchet”或“endgame”等虚浮黑话。成熟的专有名词可以使用，但必须在文档首次出现时清晰界定其含义。
 
 ## Vary the rhythm
 
-The layers decide what a document says and how much each sentence carries. A doc can obey all of them and still read machine-written: every sentence clipped short, no view anywhere, nothing specific.
+四个层次统筹的是文档“说什么”以及“单句承载量”。一份文档即便字面满足所有规则，若通篇被机械剪成极其零碎的短句、毫无专业观点与具体细节，读起来依然极其生硬。
 
-- Mix sentence lengths on purpose. Short sentences land a point. Longer ones that take their time carry a fact with its condition or consequence.
-- One thought per sentence does not mean one length per sentence. Split the sentence that carries two thoughts. Keep the long sentence that carries one.
-- Have a view where the mode allows it. Explanation weighs trade-offs, so say what you make of them instead of listing pros and cons. Reference stays dry.
-- Be specific over sterile. Not "schema changes can cause issues" but "a column rename fails the build".
+- **有意混合长短句节奏。** 短句用于掷地有声地下结论、砸下核心论点；舒展的长句则用于完整承载一个事实及其配套的前提条件或连锁后果。
+- **一句一个意思，不等于单调追求同一种长度。** 承载了两个独立意思的复合句必须拆开；但仅承载一个完整复合意思的长句应当完整保留。
+- **在允许的文体模式中鲜明亮出专业观点。** 原理与架构解释（Explanation）需要权衡取舍，必须直接给出你的专业技术判断，而非两头讨好地中立罗列优缺点；参考手册（Reference）则保持绝对干燥客观。
+- **力求具体，坚决摒弃空泛描述。** 不写“schema 变更可能引发问题”，直接写“重命名列会导致构建失败”。
 
-## Pick the mode first (Diátaxis)
+## Diátaxis 框架
 
-One document, one mode. Two questions pick it: does the content inform action (doing) or understanding (thinking), and does it serve learning or work?
+一份文档只能对应一种核心模式。通过两个维度即可精准定位：内容是服务于**实际行动（做）**还是服务于**理论理解（想）**？服务于**新知识学习**还是服务于**日常工作生产**？
 
-- Action + learning: **tutorial**.
-- Action + work: **how-to**.
-- Understanding + work: **reference**.
-- Understanding + learning: **explanation**.
+- 行动 + 学习 → **新手教程（Tutorial）**
+- 行动 + 生产 → **操作指南（How-to）**
+- 理解 + 生产 → **参考手册（Reference）**
+- 理解 + 学习 → **原理解释（Explanation）**
 
-Use the compass on a whole document or on one sentence. Reach for it whenever you feel unsure what you are writing. Gut feel is often wrong here.
+该定位坐标既可用于整篇文档的架构定型，亦可用于单个章节的审视。
 
-**Tutorial: learning by doing.** You are the teacher. The learner's success is your job, not theirs. Open by saying what the learner will build, not what they will "learn". Every step produces a visible result, early and often. Tell them what they should see: the expected output, the prompt change, the log line. Cut explanation to one clause and a link. Teaching pauses break the lesson. Stay concrete. Write as "we", in commands: "First, do x. Now, do y."
+**新手教程（Tutorial，在做中学）**：你是导师。学习者能否顺利完成是你的责任而非对方的责任。开篇明确说明学习者即将亲手造出什么具体产物，而非空泛地谈论将“学到”什么。每一个步骤都必须尽早、反复产出肉眼可见的反馈结果。清晰告知预期的命令行输出、提示符变化或日志行。背景解释压缩为一个简短从句加超链接，避免冗长的理论说教打断动手节奏。以第一人称“我们”或命令式动词书写（如“First, do x. Now, do y.”）。
 
-**How-to: steps to a goal.** Solve a problem a person has, not an operation the machine can perform. Assume competence. Skip teaching. Action only: no digressions, no background, no completeness for its own sake. Link those instead. Allow forks and judgment: "If you want x, do y." Name the guide by the task: "How to calibrate the radar array", not "Radar array calibration".
+**操作指南（How-to，达成目标的具体步骤）**：解决真实工程师在实际工作中遇到的具体问题，而非机械罗列底层机器操作。默认读者具备基础能力，跳过基础教学。直奔主题、不跑题、不铺陈繁琐背景、不为了表面完整而注水。允许基于分支的条件判断（如“If you want x, do y.”）。以具体任务命名指南（如“How to calibrate the radar array”，而非“Radar array calibration”）。
 
-**Reference: facts for lookup.** Describe. Only describe. No instruction, no persuasion, no opinion. Be dry, complete, and sure: state facts, options, limits, and errors with no hedging. Mirror the structure of the thing described, so code and docs can be navigated together. Put material where readers expect it. Generate from code where possible, so it stays true.
+**参考手册（Reference，查阅事实数据）**：纯客观描述。只做描述，不发指令，不搞说服，不带主观观点。保持干燥、完整、确定，清晰罗列事实、配置选项、边界限制与报错码，杜绝任何模棱两可的推测。严格镜像被描述实体的物理结构，使代码与文档能够并排无缝导航。凡能从代码或 Schema 自动化生成的参考手册，一律采用工具自动生成以保障绝对真实。
 
-**Explanation: understanding and why.** One bounded topic, readable away from the product. Each title should tolerate an implicit "About..." in front. Anchor on a real why question. Give context: design decisions, history, constraints, alternatives. Opinion is allowed here and nowhere else.
+**原理解释（Explanation，透彻理解与决策动机）**：一个具备清晰边界的专题讨论，脱离具体产品亦能独立阅读。每个小标题均经得起在前面暗含一个“About...”。始终锚定在真实的“为什么（Why）”之上，详尽交代背景、架构决策理由、历史演进包袱、客观约束与被否决的备选方案。专业技术观点与主张允许且仅允许在此处充分展开。
 
-Don't mix modes: no reference tables inside a tutorial, no tutorial hand-holding inside reference, no arguing inside a how-to. Split and link instead.
+严禁混淆模式：教程中切勿塞入大段参考表格；参考手册中切勿进行手把手步骤教学；操作指南中切勿展开冗长架构辩论。果断拆分并使用超链接互相索引。
 
-Source: diataxis.fr, fetched 2026-07-18.
+## Google Developer Style
 
-## Write sentences to the reader (Google developer style)
+- 使用第二人称“you”称呼读者，全篇使用现在时态；仅在描述真正发生在未来的客观事件时方可使用“will”。
+- 明确行为发出主体：写“the compiler checks”，而非“is checked”。唯有当动作发出者完全未知或无关紧要时，才允许使用被动语态。
+- 操作指令一律采用祈使句（如“Click Submit.”）；客观事实平铺直叙陈述；严禁书写含糊的“should be done”。
+- 前置条件必须置于指令动作之前（如“To delete the document, click Delete.”），便于不适用的读者直接跳过。
+- 常见核心场景置于前列，例外与边缘场景置于后列。
+- 语气宛如一位专业、务实的技术同行。不拽时髦黑话，不搞生硬比喻，指令中不写谄媚的“please”，步骤中严禁出现“simply”、“easy”或“quickly”（若真如此简单，读者便无需查阅文档）。
+- 杜绝画大饼式预告（如“we will soon support...”），避免相邻句子采用完全相同的句式开头。
+- 超链接锚文本必须清晰说明链接的目的地（使用目标页面标题或简要说明），坚决禁止使用毫无意义的“click here”。
+- 标题必须承载明确的论点或动作，而非泛泛的主题名词（写“Pick the mode first”，而非“Modes”）。任务型标题使用动词短语（“Create an instance”）；概念型标题使用名词短语。
+- 强调步骤时使用有序列表，普通并列使用无序列表；列表前使用完整的引导句引入，各列表项在语法结构上保持严格平行对称。
+- 代码符号统一使用代码等宽字体，UI 交互元素使用加粗标记。
 
-- Talk to the reader as "you", in the present tense. "Will" only for things that genuinely happen later.
-- Say who does what: "the compiler checks", not "is checked". Passive is fine only when the actor is unknown or beside the point.
-- Write instructions as commands: "Click Submit." State facts plainly. Never "should be done".
-- Put the condition before the instruction: "To delete the document, click Delete." The reader skips what does not apply.
-- Put the common case first. Exceptions after.
-- Sound like a knowledgeable friend. No buzzwords, no figurative language, no "please" in instructions, and never "simply", "easy", or "quickly" in a procedure. If it were simple, the reader would not be here.
-- Don't pre-announce ("we will soon support...") and don't start consecutive sentences with the same phrase.
-- Read the awkward sentence aloud. If it stays awkward, rewrite it.
-- Link with words that say where the link goes: the page title or a short description. Never "click here". Prefer a sentence of context on the page over a link off it.
-- Headings carry the point, not just the topic ("Pick the mode first", not "Modes"). Sentence case. A task heading is a bare verb phrase ("Create an instance"). A concept heading is a noun phrase. One h1 per page, no skipped levels.
-- Numbered lists for sequences, bullets for everything else. Introduce a list with a complete sentence. Keep items parallel.
-- Code goes in code font. UI elements go in bold. Use serial commas. Drop "etc." and say up front that a list is partial.
+## STE 规范
 
-Source: developers.google.com/style, fetched 2026-07-18.
+- 一句仅承载一条操作指令；在陈述性正文中，一句仅承载一个核心意思。
+- 操作指令超过约 20 词必须拆分；常规句子超过约 25 词必须拆分。
+- 安全警告或触发条件必须严格置于其所守护的操作步骤之前（如“If hot oil touches your skin, injuries can occur.”）。
+- 为每个专业词汇赋予唯一的、精确的语义职责并严格坚守。若“check”用于表示检查校验，切勿在其他地方拿它表示限制约束。
+- 同一动作在全篇始终使用同一个动词表达（例如全篇统一使用“start”，切勿在此处写“start”、在彼处写“initiate”）。
+- 操作步骤统一写为直接的命令祈使句，拒绝被动语态或冗长叙述（写“Install the component”，而非“the component must be installed”）。
 
-## Make statements load one at a time (STE rules)
+## Global English 准则
 
-- One instruction per sentence. One thought per sentence everywhere else.
-- Split instructions longer than about 20 words and other sentences longer than about 25.
-- Put the warning or condition before the step it guards: "If hot oil touches your skin, injuries can occur."
-- Keep "the" and "a": "Remove backup file" reads two ways. "Remove the backup file" reads one.
-- Give each word one meaning and one job, then keep it. If "check" means inspect, don't also use it for restrain.
-- Pick one word per action and stick to it: "start", not "start" here and "initiate" there.
-- Write procedures as direct commands, never as narration and never in the passive: "Install the component", not "the component must be installed".
-- Avoid "-ing" words where you can. They take too many grammatical jobs and breed misreadings.
+- 修饰词（如“only”、“not”）必须紧邻其所修饰的核心词：“only fails on growth”与“fails only on growth”表达的是截然不同的两件事。
+- 拆解过长的一长串复合名词：“the proto import budget check script”重构为“the script that checks the proto-import budget”。
+- 确保代词（如“it”、“they”、“this”）具有唯一定位、显而易见的明确先行词；存疑时直接重复名词本身。坚决禁止使用“this”或“which”模糊指代前文整个长从句。
+- 严禁省略核心谓语动词。
+- 保留能够彰显句子语法结构的关键连词（如保留“Ensure that the switch is off”中的“that”），坚决杜绝用牺牲语法清晰度来换取虚浮的字数缩减。
+- 并列结构中若代表两个独立实体，重复使用冠词以消除歧义（写“the client and the host”，而非“the client and host”）。
+- 使用“Both...and”、“either...or”与“if...then”等确定性连词消除逻辑与或歧义。
+- 优先使用句号收尾，避免滥用分号；将长破折号直接重构为独立的新句子。
+- 括号内的补充文本要么构成完整的语法成分，要么自成独立句子。
+- 拒绝使用斜杠表达模糊含义：写“a, b, or both”，而非“a/b”或“and/or”。
+- 同一实体在整套文档中必须且只能拥有唯一的规范名称。
+- 坚决杜绝俚语习语、生硬隐喻与拉丁缩写（如“i.e.”、“e.g.”），确保非母语工程师与自动化 Agent 均能精准无误地解析。
 
-Source: asd-ste100.org (Issue 9, 2025), fetched 2026-07-18. The numbered rules and dictionary live in the spec PDF. The principles above are the transferable core.
+## 去 AI 腔与审查清单
 
-## Leave no sentence open to two readings (Global English)
-
-- Keep words like "only" and "not" next to the word they change: "only fails on growth" and "fails only on growth" say different things.
-- Break up long noun strings: "the proto import budget check script" becomes "the script that checks the proto-import budget".
-- Make every "it", "they", and "this" point at one obvious thing. Repeat the noun when in doubt. Never use "this" or "which" to point at a whole clause.
-- Don't drop verbs: "Phase 1 moves the converters and Phase 2 the runtime" leaves Phase 2 without one. Give it one.
-- Keep the small words that show structure. "Ensure that the switch is off" keeps "that" because it makes the sentence parse one way. Never trade clarity for word count.
-- Repeat the article in a series when it prevents a misread: "the client and the host", not "the client and host", when they are two things.
-- Say which parts "and" or "or" joins when a sentence can group two ways. "Both...and", "either...or", and "if...then" are free disambiguators.
-- Use periods, not semicolons. Replace an em dash with a new sentence.
-- Make text in parentheses a full grammatical unit or its own sentence. Never form plurals with "(s)".
-- No slashes: write "a, b, or both" instead of "a/b" or "and/or".
-- Call each thing by one name, everywhere. A doc that says "the gate", "the ratchet", and "the budget check" for one thing teaches three things. Rewording an unchanged sentence between edits costs the same way: don't churn what didn't change.
-- Skip idioms, colloquialisms, Latin abbreviations, and metaphors. A non-native reader, a translator, and an agent all parse plain constructions best.
-
-Source: Kohl, The Global English Style Guide (SAS Press). Guideline text fetched from the Internet Archive and the SAS sample chapter, 2026-07-18.
-
-## Voice and repo specifics
-
-- Apply the **unslop** skill to every doc this skill touches. That skill owns the slop-pattern catalog: AI vocabulary, filler, hedging, formatting tells.
-- PR descriptions and commit messages are writing too. Every layer except Diátaxis applies to them.
-- Product UI strings are not documentation. Use your product's copy guidelines for those.
-- Indent code snippets with tabs. Write real paths and real symbols. Make every count or tree claim true at the commit that lands it, and include the command that regenerates it.
-
-## Worked example
-
-Before:
-
-> Configuration of the proto import ratchet budget script parameters is performed via budget.json. Note that it's important to remember that running with --write, which updates the committed budget to reflect the current count, should only be done when lowering it. If exceeded, CI fails.
-
-After:
-
-> `budget.mjs` reads the committed budget from `budget.json` and counts the files that import protos. If the count exceeds the budget, CI fails. Run `budget.mjs --write` only to lower the budget.
-
-The fixes, by layer: "configuration is performed" becomes "`budget.mjs` reads", so someone does something (Google). "Ratchet" goes away. The script's real filename does the naming (jargon rule). The five-noun string breaks up into plain clauses (Global English). The hedge "note that it's important to remember" is deleted (cut every word that does no work). The failure condition moves ahead of the step it explains (STE). The buried "should only be done when lowering" becomes a command with "only" next to its verb (STE). "If exceeded" gets a subject: the count (Global English).
-
-## Review checklist
-
-Apply to any prose this skill covers. Item 1 applies only to document sets:
-
-1. Is each file one Diátaxis mode, with links where modes meet?
-2. Is every instruction written as a command, with its condition in front?
-3. Does any sentence carry two instructions or two thoughts? Split it.
-4. Can any word be cut without losing meaning? Cut it.
-5. Is "only" next to the word it changes? Does every "it" point at one thing? Does every clause keep its verb?
-6. Does each thing have exactly one name across the docs?
-7. Would a developer say these words out loud? Replace invented metaphors and fancy synonyms with the plain word or the real symbol name.
-8. Are all symbols, paths, and counts real at this commit, with the commands that regenerate the counts?
+- 本规范涉及的任何技术文档，必须无条件应用 **unslop** 技能进行深度清洗。
+- 审查核对清单：
+  1. 结构是否符合 Diátaxis 模式且模式交界处包含明确链接？
+  2. 指令是否全为祈使句且条件置于动作之前？
+  3. 是否存在承载两个指令或两个独立意思的长句？（果断拆分）
+  4. 是否存在删除后丝毫不影响原意的废话？（果断删除）
+  5. 关键修饰词是否紧邻修饰对象？代词指向是否唯一确定？
+  6. 同一概念在全篇是否拥有唯一确定的规范名称？
+  7. 词汇是否平实自然，坚决剔除生造黑话与虚浮比喻？
+  8. 文档中引用的所有路径、符号名称与代码片段在当前 commit 上是否真实准确存在？

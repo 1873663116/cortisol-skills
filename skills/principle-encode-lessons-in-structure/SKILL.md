@@ -1,31 +1,31 @@
 ---
 name: principle-encode-lessons-in-structure
-description: "Apply when you catch yourself writing the same instruction a second time, or notice a recurring correction. Encode the rule as a lint, metadata flag, runtime check, or script instead of more text."
+description: "当发现自己需要第二次写下同一条规则，或注意到某个纠正反复出现时使用。将规则固化为 linter 规则、元数据标记、运行时检查断言或自动化脚本，而非继续堆砌自然语言文档。"
 disable-model-invocation: true
 ---
 
 # Encode Lessons in Structure
 
-Encode recurring fixes in mechanisms (tools, code, metadata, automation) instead of textual instructions. Every error, human correction, and unexpected outcome is a learning signal. Capture it, route it, and close the loop.
+将反复出现的修复与规范沉淀进确定性的机制中（如自动化工具、类型约束、元数据标记、CI 门禁等），而非仅写成口头文档或 Prompt 指令。每一次报错、每一次人工纠偏、每一个出乎意料的异常结果都是宝贵的高价值信号：捕获它、路由至合理层次并彻底闭合改进回路。
 
-**Why:** Textual instructions are easy to miss. They require the reader to notice, remember, and comply. Structural mechanisms (lint rules, metadata flags, runtime checks, automation scripts) enforce the rule without cooperation.
+**核心理由。** 纯文本形式的自然语言指令极易被遗漏或忽略，它依赖后续阅读者能够主动注意到、准确记住并严格自觉执行。而结构化机制（如 Linter 规则、类型系统约束、元数据拦截、运行时强断言、自动化测试脚本）无需依赖人工主观自觉即可实现无条件强制约束。
 
-**Pattern:**
-When you catch yourself writing the same instruction a second time:
-1. Ask: can this be a lint rule, a metadata flag, a runtime check, or a script?
-2. If yes, encode it. Delete the instruction
-3. If no (genuinely requires judgment), make the instruction more prominent and add an example of the failure mode
+**实践路径。**
+当你发现自己需要第二次写下同一条指令或提示时：
+1. 首先评估：该要求能否转化为一条 Linter 静态规则、元数据标记、运行时防御性断言或自动化校验脚本？
+2. 若可以，立即将其固化为对应机制，并删除冗余的口头指令文本。
+3. 若确实无法程序化固化（必须依赖主观工程裁量），则显著强化该指令的表述清晰度，并显式补齐典型的负面反例（Failure mode）。
 
-**Pick the strongest rung.** When more than one mechanism would work, choose the strongest the situation allows (an unrepresentable state that cannot compile, then a lint or banned API that fails CI, then a canonical helper, then a runtime check), because agents copy whatever the surrounding code already does and a weaker guard becomes the next template.
+**优先选择约束强度最高的一级。** 当存在多种可行机制时，选择当前环境允许的最强约束形式（强度最高的是通过类型系统设计使非法状态在编译期无法表达，其次是导致 CI 挂掉的 Linter 规则或禁用 API 列表，再次是标准化的封装 Helper，最后才是运行时动态断言）。因为 Agent 会倾向于模仿周围既有代码的实现风格，较弱的护栏极易被当作错误的模板向外扩散。
 
-**Corollary:** Don't paper over symptoms. If the fix is structural, ONLY use the structural fix. The instruction IS the symptom.
+**重要推论。** 治本而非治标。若存在结构性的解决路径，坚决采用结构化机制消除根因，反复出现的口头指令本身正是系统机制缺失的病症表象。
 
-**Feedback loop:**
-- **Capture every correction.** When the human intervenes or tests fail, decide if it's a one-off or a pattern.
-- **Route to the right layer.** One-off -> brain note. Recurring fix -> skill or lint rule. Systemic issue -> principle.
-- **Close the loop.** Don't just record. Apply now or create a concrete todo.
+**反馈闭环：**
+- **敏锐捕获每一次纠偏。** 每当有人工介入修正或测试用例失败时，判断其属于单次偶发问题还是代表了某类通用模式。
+- **精准路由至对应层次。** 单次偶发细节记录在局部备忘中；反复出现的修复沉淀为技能规范或 Linter 规则；深层次的系统性设计缺陷上升为通用工程原则。
+- **彻底闭合改进回路。** 严禁只记录而不落地。要么当前立即在代码/工具中落实，要么将其创建为明确具体的待办项。
 
-**Anti-patterns:**
-- Acknowledging without recording ("I'll keep that in mind" does not persist)
-- Recording without routing (a brain note about a lint rule that should exist is wasted unless the lint rule gets implemented)
-- Fixing without generalizing (fixing one instance while leaving the recurring pattern intact)
+**典型反模式：**
+- 口头承认却不留存（“我下次会记住”无法跨越会话持久生效）。
+- 记录问题却不推进落地（仅在笔记中写下“这里本该加一条 Linter”，若后续始终未实现，则记录毫无价值）。
+- 仅修复孤立表象却不总结泛化（修掉当前单点实例，却任由相同模式在其他位置继续滋生）。

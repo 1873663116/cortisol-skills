@@ -1,23 +1,24 @@
 ---
 name: principle-minimize-reader-load
-description: "Apply when reviewing or shaping code that's hard to trace. Count layers between question and answer, and hidden state in the reader's head; collapse one-caller wrappers and shrink mutable scope."
+description: "审查或重构难以理清的代码时使用。严密追踪两个维度：解决问题需跨越的间接调用层数，以及读者大脑中需维持的隐式状态规模。果断折叠单调用方包装层，大幅收窄可变状态的作用域。"
 disable-model-invocation: true
 ---
 
-# Minimize Reader Load
+# 最小化阅读者心智负担（Minimize Reader Load）
 
-Maintainability is the work a reader must do to understand code. Track two axes:
-1. **Layers to trace.** How many indirections sit between the question and the answer.
-2. **State to hold.** How much hidden or mutable context the reader must keep in their head.
+软件的可维护性，本质上取决于后续阅读者理解代码逻辑所必须付出的心智工作量。重点追踪并控制两个核心维度：
+1. **需追踪的间接层数**：从提出问题到找到答案之间跨越了多少层间接抽象。
+2. **需记忆的状态规模**：读者大脑工作记忆中必须同时维持多少隐式或可变的上下文状态。
 
-**Why:** Code is read far more than it is written. LOC, cyclomatic complexity, and "clean architecture" are proxies. Reader load is the thing that matters. The two axes are independent. A flat file with 50 globals can be as hard to reason about as a 6-layer adapter stack. Guard both. This is the human analog of [Guard the Context Window](../principle-guard-the-context-window/SKILL.md): working memory is finite for readers too.
+**核心理由。** 代码被阅读与理解的次数，远多于被编写的次数。代码行数、圈复杂度与形式上的“整洁架构”都仅仅是代理指标；真正决定系统可维护性的是读者的实际认知负荷。上述两个维度彼此独立：一个塞满 50 个全局变量的扁平文件，与一个层层透传的 6 层适配器调用栈，在理解推理难度上同样灾难。两者都必须严格设防。本原则即是[守卫上下文窗口](../principle-guard-the-context-window/SKILL.md)在人类工程师认知层面的具象化映射，人类的工作记忆容量同样极其有限。
 
-**The pattern:**
-- **Collapse layers** that do not earn their keep: wrappers with one caller, adapters with no second implementation, indirection introduced for a future that never came. Inline them.
-- **Make adjacent layers change the abstraction.** A layer that repeats the same methods and arguments adds reader load without compression. Collapse pass-through layers.
-- **Demand interface compression.** A broad interface that hides little complexity makes readers learn both the surface and the implementation. Prefer boundaries that hide meaningful decisions.
-- **Shrink state scope:** prefer pure functions (returns over mutations), locals over fields, fields over module state, and module state over globals. Derive instead of sync.
-- **Name the invariant at the boundary,** not in every consumer, so the reader learns it once.
-- Before adding a layer or a piece of state, ask: does this reduce reader load somewhere else by at least as much?
+**实践规范：**
+- **果断折叠性价比低劣的间接层。** 仅有一个调用方的无意义包装函数、从无第二个实现的空洞适配器、为虚无缥缈的未来扩展而凭空引入的间接层，一律直接内联消除。
+- **要求相邻层次必须改变抽象级别。** 若某个中间层仅仅是在机械重复相同的函数签名与参数转发，则该层仅增加了认知负担而未实现任何信息压缩；果断折叠此类纯透传层。
+- **追求高信息压缩比的接口设计。** 一个对外暴露极其繁琐、内部却几乎未封装任何复杂度的松散接口，会迫使读者将接口表象与内部实现细节同时完整学一遍；优先设计能够有效封装实质性技术决策的高内聚边界。
+- **最大化收窄可变状态的作用域。** 优先采用纯函数（通过返回值传递状态，杜绝就地就地修改），局部变量优于对象属性，对象属性优于模块级状态，模块级状态远优于全局变量。能通过纯逻辑推导计算的状态，坚决不通过手动状态同步去维护。
+- **在边界处为核心不变量统一定义命名**，而非任由每个消费方各自重复编写校验逻辑，使阅读者只需学习理解一次。
+- **新增抽象前必须经过成本效益审问**：在新增一个中间层或引入一份新状态前，自问其在其他位置所削减的认知负担，是否确实显著超过了其自身带来的额外复杂度？
 
-**The test:** Can a new reader answer "where does X come from?" and "what can change X?" in under 30 seconds? If not, cut layers or cut state.
+**检验准则：**
+一位新接手该模块的工程师，能否在 30 秒内清晰回答“变量 X 源自何处？”以及“哪些代码路径会改变变量 X 的值？”若不能，立即削减调用层级，或大幅收窄状态作用域。

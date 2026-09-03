@@ -1,82 +1,83 @@
 ---
 name: show-me-your-work
-description: "Keep a reviewable decision trail for long-running or unattended work: a TSV log with one row per decision (what, why, evidence, result). Local by default; commit it when a reviewer needs the trail to trust the result. Use for /show-me-your-work, autonomous or multi-phase runs, or work a human reviews after stepping away."
+description: "为长时间运行、自主探索或无人值守的工作沉淀一条可审计的决策凭证链。维护一份结构化的 TSV 决策日志表，一行记录一个核心决策（做了什么、决策理由、证据索引、验证结果）。默认仅保留在本地，仅在评审者需要凭借该轨迹建立完全信任时才提交入库。适用于 /show-me-your-work、自主运行、多阶段规划，或人类中途离场、后续返回集中审查的场景。"
 disable-model-invocation: true
 ---
 
-# Show me your work
+# 决策轨迹沉淀（Show Me Your Work）
 
-For work a human reviews after the fact, a decision trail lets them reconstruct what was decided, why, and on what evidence, without rerunning the work or reading the whole transcript. Keep one canonical log so the trail is consistent and a future agent can find it.
+针对人类工程师在事后才来集中审查的重大工程任务，一条清晰、结构化的决策日志轨迹能够使其迅速还原当时做出了何种技术决定、背后的核心理由是什么、以及依据了何种客观验证证据，而无需从头重跑整个繁重的任务流程或痛苦通读海量会话记录。全流程仅维护一份单一的权威日志，确保轨迹高度一致，使后续接手的 Agent 能够无缝定位与理解。
 
-## The format
+## 标准日志格式
 
-A single TSV file, one row per decision. TSV because GitHub renders it as a sortable table, `column -s$'\t' -t` and spreadsheets read it, and a row appends with one command. Cells stay single-line. Evidence is a pointer, not prose.
+统一采用单文件 TSV（Tab-Separated Values）格式，每行记录一个独立的技术决策。选用 TSV 的核心优势在于：GitHub 原生支持将其渲染为可交互排序的表格；终端中使用 `column -s$'\t' -t` 或电子表格软件可直接打开解析；且通过单条命令即可完成安全追加。各单元格严格保持单行，证据列存放明确的指针引用，严禁在单元格内倾倒大段散文。
 
-Copy `references/decision-log-template.tsv` (the header row) to start a clean log. Columns:
+复制 `references/decision-log-template.tsv` 中的表头行即可初始化一份干净的日志表，标准列定义如下：
 
-- **ts.** ISO8601 timestamp. The timeline axis.
-- **phase.** The phase or workstream.
-- **decision.** What was chosen or done, one line.
-- **why.** The reason in plain words. If a principle drove it, say it plainly (`explored options first, this was a one-way door`), not as a jargon tag.
-- **evidence.** A link or path that proves it: commit SHA, PR number, `file:line`, or an artifact, trace, or screenshot path. Never a paragraph.
-- **result.** The outcome or predicate state: `tests green`, `reverted`, `pixel-diff 0`, `INCONCLUSIVE`, `open`.
+- **ts**：ISO8601 标准时间戳（如 `2026-05-24T09:02:00Z`），构成清晰的时间轴。
+- **phase**：当前所处的执行阶段或工作流名称。
+- **decision**：做出的技术选型或核心动作，单行精炼概述。
+- **why**：采用平实直白的语言阐明决策背后的根本原因。若是某项工程原则驱动的，用大白话清晰讲出（如“鉴于该改动属于不可逆单向门，故在动手前先并行探索了三种备选方案”），坚决避免堆砌空洞的原则标签术语。
+- **evidence**：能够证明该决策有效性的确凿指针或文件路径，如具体的 Git commit SHA、PR 编号、`file:line` 源码定位、测试产物路径、性能 Trace 文件或比对截图路径，严禁写成空泛描述。
+- **result**：最终的产出状态或判定结论，如 `tests green`、`reverted`、`pixel-diff 0`、`INCONCLUSIVE`、`open` 等。
 
-An example, plain-spoken so a reviewer reads it at a glance. This is illustration only; don't copy these rows into a real log.
+示例条目（仅供格式参考，请勿将示例数据硬编码至真实日志中）：
 
-```
+```tsv
 ts	phase	decision	why	evidence	result
-2026-05-24T09:02:00Z	frame	counted the work first, about 100 components and roughly 75 hours	wanted to know the size before starting a long run	commit 3a9f1c2	found 5 things to sort out before starting
-2026-05-24T09:40:00Z	harness	took screenshots of the old version before changing anything	so we can compare old against new and catch any visual change	scripts/snapshot.sh, baseline/	saved 120 reference screenshots
-2026-05-24T11:15:00Z	widget	moved the widget styles over without changing how it looks	keep the change small and the result identical	commit 7c21e0a, pixel-diff 0	looks identical, tests pass
-2026-05-24T12:30:00Z	widget	threw out a helper's work because its screenshots were blank	checked the real files instead of trusting its summary	worktree reset	reverted, tightened the instructions for next time
+2026-05-24T09:02:00Z	frame	先清点工作量，约 100 个组件需迁移，预估耗时 75 小时	在开启超长周期运行前必须先摸清总体规模与潜在风险	commit 3a9f1c2	在开工前排查出 5 个前置阻塞卡点
+2026-05-24T09:40:00Z	harness	在改动任何代码前，先截取旧版本全量 UI 基线截图	用于作为新旧版本像素级比对的客观基准，防止视觉回归	scripts/snapshot.sh, baseline/	成功保存 120 张基线参考截图
+2026-05-24T11:15:00Z	widget	完成控件样式迁移，严格保持既有视觉渲染表现不变	保持单次提交小巧内聚，确保输出结果与基线严格等价	commit 7c21e0a, pixel-diff 0	视觉表现完全等价，全量测试通过
+2026-05-24T12:30:00Z	widget	废弃并回滚了某子 Agent 的产物，因其实测截图呈现全白	直接检查真实物理产物，坚决不盲信子 Agent 的单方口头汇报	worktree reset	成功回滚，针对下一轮迭代进一步收紧任务 Prompt
 ```
 
-## Logging a row
+## 记录单条日志
 
-Write each entry the way you'd tell a teammate what you did. Plain words, concrete actions, no AI speak or abstract jargon (the **unslop** skill applies to log text too). A reviewer should understand each row without decoding it.
+每条记录的撰写风格，应当宛如你当面向资深工程师同事汇报工作时的语气：用词平实、动作具体，彻底消除 AI 腔与晦涩行话（**unslop** 技能同样严格适用于日志文本）。评审者应当无需任何额外的脑力解密即可一眼看懂每一行。
 
-Use the helper so rows stay well-formed: `scripts/log.sh <logfile> <phase> <decision> <why> <evidence> <result>`. It stamps `ts`, writes the header on first use, strips stray tabs/newlines, and prefixes any cell starting with `=`, `+`, `-`, or `@` with a single quote so a reviewer opening the log in a spreadsheet doesn't trigger formula execution. A bare `printf` appending a row works too, but mind those same bytes if cells come from generated or user-supplied text.
+推荐调用专用脚本确保格式绝对规整：`scripts/log.sh <logfile> <phase> <decision> <why> <evidence> <result>`。该脚本会自动补全标准时间戳 `ts`、在首次创建时写入标准表头、自动过滤单元格内的非法制表符与换行符，并为以 `=`、`+`、`-`、`@` 开头的文本自动添加单引号转义，防止评审者在用 Excel 或 Numbers 打开日志时触发非预期的公式执行。若使用原始命令追加写入，亦须严格遵循上述转义安全规范。
 
-Log decision points and checkpoints, not every action: a fork chosen, a unit completed with its verification result, a pivot or revert with its trigger, a blocker surfaced, a gate fixed. For loop runs, one row per iteration. Skip the trivial and self-evident.
+**记录颗粒度准则**：重点记录关键**决策点（Decision points）**与核心**检查点（Checkpoints）**，而非事无巨细记录每一次琐碎操作。值得记录的典型事项包括：关键分叉路径的选型定夺、某个独立单元完成并附带确凿验证证据、关键转向或代码回滚及其触发根因、暴露出的前置阻塞项、以及修复一道重要门禁。在循环迭代式任务中，每轮迭代记录一行；常规琐碎与不言自明的微小动作直接略过。
 
-## Where it lives
+## 日志存储位置
 
-By default the log is a working artifact, not committed. Keep it at `decisions.tsv` in the work dir, or `.audit/<task-slug>.tsv` when several efforts run at once, and leave it out of git. Most work doesn't need a committed trail; the local log still keeps the run honest and can be discarded after.
+默认情况下，该决策日志属于本地中间工作产物，无需提交入库。存放在当前工作目录下的 `decisions.tsv`；当存在多个并发攻坚任务时，存放在 `.audit/<task-slug>.tsv` 并配置在 `.gitignore` 中予以忽略。绝大多数常规工作无需提交日志文件，本地日志已足够保障单次会话执行的严谨诚实，任务完成后可直接丢弃。
 
-Commit it only when the work is ambitious enough that a reviewer needs the trail to trust the result: a large cross-language port, a multi-week migration, anything where confidence has to be shown rather than assumed. A committed log renders as a table in the PR.
+唯有当任务规模极其宏大、评审者必须依托该决策轨迹才能建立对交付成果的完全信任时（如大型跨语言代码移植、历时数周的系统重构迁移、或任何需要充分展示置信度而非凭空相信的重大攻坚），方可将该日志文件随代码一同提交入库。提交的日志文件将在 GitHub PR 中自动渲染为直观的可视化表格。
 
-## Rules
+## 核心准则
 
-- One row is one decision or checkpoint. If it doesn't fit on one line, the decision isn't crisp yet.
-- Append-only. A wrong call gets a new row that supersedes it. Never edit or delete history.
-- Prefer evidence produced by committed scripts over hand-made one-offs, so a reviewer can re-run it (the **encode-lessons-in-structure** principle skill).
+- **单行即代表一个独立决策或检查点**。若一行内容无法容纳，说明该技术决策本身尚未思考透彻。
+- **严格只做追加（Append-only）**。若此前做出的技术判断在后续被推翻，新追加一行以记录纠偏；严禁篡改或删除历史记录行。
+- **优先引用由已提交入库的确定性脚本生成的证据**，而非手工生成的一次性临时产物，确保评审者能够亲自重跑复现（遵循[将教训沉淀进系统结构中](../principle-encode-lessons-in-structure/SKILL.md)原则）。
 
-## Audit the log against the transcript
+## 依据会话记录审计日志真实性
 
-At the end of the run, before handing back, check the log told the truth. Read this run's transcript at `~/.claude/projects/<slug>/<uuid>.jsonl` under the active workspace's `<slug>` directory. Do not glob across `~/.claude/projects/*/`; that reads unrelated private chats. The confirmed directory for `/Users/xiongzhipeng/.agents` is `~/.claude/projects/-Users-xiongzhipeng--agents/`. Walk the log against what actually happened:
+在本次长周期运行结束、交回控制权给用户之前，必须对日志内容进行严格的事实核验。读取当前工作区 `<slug>` 目录下的本地真实会话日志 `~/.claude/projects/<slug>/<uuid>.jsonl`（严禁使用通配符 `~/.claude/projects/*/` 以免越界读取其他项目的历史会话；当前工作区 `/Users/xiongzhipeng/.agents` 对应目录为 `~/.claude/projects/-Users-xiongzhipeng--agents/`）。将 TSV 日志与实际发生的交互记录逐条严格核对：
 
-- Every row maps to a real action. Cut invented or aspirational entries.
-- Each row's evidence resolves and shows what the row claims.
-- A fork, pivot, or abandoned approach that shaped the work but isn't logged is a gap. Add it.
-- Drop padding. If nobody would audit a row, it doesn't earn its place.
+- 每一行记录均必须精准对应一次真实发生过的工程动作；坚决删除任何凭空捏造或一厢情愿的美化条目。
+- 每一行所引用的证据指针必须真实存在，且其物理内容确凿支撑该行所声明的技术结论。
+- 若某次关键技术分叉、方案转向或被放弃的试错深刻影响了系统演进却未被记录，将其作为缺口立即补齐。
+- 果断剔除毫无审计价值的凑数流水账条目。
 
-Fix the log, not the story. If the work diverged from what a row claims, the row is wrong.
+**务必修正日志，而非美化事实**：若实际工程执行与某一行所声称的内容存在出入，错在日志记录，必须据实修改日志。
 
-## Cross-model review of the trail
+## 跨模型独立审计
 
-Before handing back, read the **dispatch** skill and use its `arena cross-judge` role to select an agent type whose vendor differs from the one that did the work. Call `delegate_to_agent` with the review prompt and the workspace's absolute path as `working_dir`, then collect its `task_id` with `get_delegation_status`. Self-review is not a substitute; the point is fresh eyes you cannot bring yourself. The delegate reads the audit trail and the run's transcript, then flags what the user should pay attention to. Put `Do not write or modify files` in the task because the local delegate has no read-only mode. This is not a redo of the work. It is a scan for what is suboptimal or risky.
+在向用户正式交回控制权之前，查阅 **dispatch** 技能规范，选用其 `arena cross-judge` 角色，指派一个与主执行模型来自不同供应商的独立审计 Agent。携带专用审计 Prompt 派发该任务：自我审查无法替代独立审计，核心价值在于引入一双完全独立的外部视角。该审计 Agent 将深入通读决策日志与本次运行的完整会话记录，精准标出人类工程师需要重点关注的风险点。任务指令中必须显式注明 `Do not write or modify files`。
 
-- Decisions logged with weak or absent evidence.
-- Verification steps skipped or claimed without proof in the transcript.
-- Choices that look risky in hindsight (premature, scope-creeping, papering over a symptom).
-- Gaps the user would otherwise miss on a casual skim.
+重点审计维度包括：
+- 记录日志时引用的证据链薄弱或存在事实缺失的关键决策。
+- 在实际执行中被跳过的验证步骤，或在会话记录中找不到确凿证据却单方声称验证通过的条目。
+- 事后复盘存在潜在架构风险的妥协（如过早优化、范围蔓延、治标不治本的防御补丁）。
+- 人类工程师在快速浏览 PR 时极易遗漏的隐蔽缺陷与技术盲区。
 
-Every reply for a run that produced a trail ends with an "Attention" section. Lead with the reviewer agent type on its own line (`reviewed by <agent_type>`), then list each flag pointing to specific rows or moments. "No flags" is a valid value; the agent type alone is not. The self-audit asks if the log told the truth; this asks what the user should still scrutinize even when it did.
+凡是产出决策日志的长周期运行，在最终向用户汇报的末尾必须包含一个专属的 **"Attention"** 章节：开头单行注明独立审计 Agent 的模型类别（如 `reviewed by <agent_type>`），随后逐条列出风险标记，每项标记均须精准指向具体的日志行号或交互时间点。若未发现任何风险，“No flags”是完全合法的结论；但严禁仅写模型名称而省略具体审计判定。
 
-## Reviewing the trail
+## 审查决策轨迹方法
 
-Read top to bottom, follow the evidence pointers, spot-check. GitHub renders a committed TSV as a table; `column -s$'\t' -t decisions.tsv` renders it in a terminal. A row whose evidence doesn't resolve, or whose result is unverified, is the audit catching a gap.
+自顶向下通读日志表，顺着证据指针逐一抽检核验。在 GitHub 上提交的 TSV 会自动渲染为表格，在终端中可直接运行 `column -s$'\t' -t decisions.tsv` 进行对齐浏览。若某一行所引用的证据无法唯一定位、或其实测结果未经验证，即代表审计捕获了一处事实缺口。
 
-## Composing this skill
+## 与其他技能的组合规范
 
-Other skills route their audit trail here instead of inventing one. Reference it by name and let it own the format; don't restate the columns.
+其他复杂技能需要维护长效决策记录时，直接复用本技能规范，严禁另起炉灶自创格式。按名称引用本技能，直接遵循本技能定义的标准字段结构，无需重复声明字段定义。

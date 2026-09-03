@@ -1,23 +1,23 @@
 ---
 name: principle-fix-root-causes
-description: "Apply when debugging. Trace each symptom to its root cause and fix it there; reproduce first, ask why until you reach it, resist nil-check guards that silence crashes."
+description: "排查修复 Bug 时使用。将每个表象症状一路向上回溯至根本原因并在根因处根治；坚持先稳定复现，连续深究原因直至触达核心病因，克制住仅靠添加空值防御判断来掩盖崩溃的冲动。"
 disable-model-invocation: true
 ---
 
 # Fix Root Causes
 
-When debugging, do not paper over symptoms. Trace every problem to its root cause and fix it there.
+调试排错时坚决拒绝掩盖表象症状。将每一个问题一路向上追溯至根本原因，并在产生根因的源头彻底根治。
 
-**Why:** Symptom fixes accumulate. Each workaround makes the system harder to reason about, and the real bug remains. Root-cause fixes are slower upfront but reduce total debugging time.
+**核心理由。** 针对症状打补丁的负债会像滚雪球般迅速累积。每一个绕过问题的防御性补丁都会让系统逻辑变得更加晦涩难以推理，而底层的真正 Bug 依然潜伏在原地。根因修复在前期推导时可能稍慢，但能大幅缩减系统长期的总调试成本与技术债务。
 
-**Pattern:**
-- Reproduce first (if you can't reproduce it, you can't verify your fix)
-- Ask "why" until you hit the root cause
-- Resist the urge to add guards (adding a nil check to silence a crash is a symptom fix)
-- If a workaround needs a paragraph-long comment to justify it, the code is wrong (fix the code, not the comment)
-- Check for the pattern, not just the instance (grep for the same pattern, fix all instances)
-- When stuck, instrument. Don't guess (add logging, read the actual error)
+**实践规范：**
+- **必须先稳定复现。** 无法稳定复现的问题，永远无法在逻辑上证明你的修复切实有效。
+- **连续深究“为什么”。** 沿调用链与状态流持续向上追溯，直至触达产生错误的根本源头。
+- **克制盲目添加防御性判断的冲动。** 仅凭随手添加一个空值检查（`if (x == null)`）来压制当前崩溃，属于典型的治标不治本；必须查清该变量为何在此时处于非法空状态。
+- **警惕冗长辩护注释。** 若某个绕行方案需要写满一整段注释来为其合理性辩护，通常意味着代码实现本身存在根本性设计缺陷（应重构修复代码本身，而非修饰注释）。
+- **举一反三，排查同类模式。** 寻找背后的通用模式，通过代码检索全面排查所有类似隐患并统一根治，而非仅修复孤立的单点实例。
+- **卡点时立即添加精确插桩。** 排查陷入僵局时，主动添加结构化日志与断言探针，在真实运行时读取确凿错误信息，严禁脱离实际凭空猜想。
 
-**Restart bugs: suspect state before code**
+**重启类故障排查准则：先怀疑持久化状态，再怀疑代码逻辑。**
 
-Code doesn't change between runs. State does. When something "fails after restart," suspect stale persistent state first: config files, caches, lock files, serialized state. If clearing a state file restores behavior, prioritize state validation as the fix.
+在两次运行之间，代码本身是静态不变的，发生改变的必然是运行时状态。遇到“重启或重新部署后偶发失败”的故障，首先排查陈旧的持久化状态：包括配置文件、本地缓存、锁文件残留以及序列化状态反序列化异常。若清理特定状态文件后系统行为立即恢复正常，应将状态校验与自愈恢复作为最高优先级的修复方案。

@@ -1,109 +1,94 @@
 ---
 name: automate-me
-description: "Use for \"automate me\", \"create/update/refresh my -mode skill\", \"turn/capture my preferences or working style into a skill\", or wanting agents to follow how the user works. Drafts or revises a personal -mode skill via writing-for-agents and unslop, optionally pulling fresh evidence from recent transcripts."
+description: "用于“automate me”、“创建/更新/刷新我的 -mode 技能”、“将我的工程偏好或工作风格固化为技能”，或希望后续 Agent 严格遵循当前用户的工作习惯。结合 writing-for-agents 与 unslop 技能规范，起草或修订专属的个人 -mode 技能，并按需从历史会话记录中提取最新事实证据。"
 disable-model-invocation: true
 ---
 
-# Automate me
+# Automate Me
 
-A guided flow for turning the user's working conventions into a skill agents will follow. The output is one `-mode` skill tailored to them (e.g. `jay-mode`, `priya-mode`).
+一套结构化的引导工作流，用于将人类用户个性化的工程工作习惯与核心偏好，固化为一个供后续 Agent 严格遵循的专属技能。最终交付物为一个为其量身定制的 `-mode` 技能（如 `jay-mode`、`priya-mode` 等）。
 
-This skill combines an inline mining pass with the **writing-for-agents** skill for agent-facing documentation and the **unslop** skill for prose discipline. It sequences them; it doesn't replace them.
+本技能将历史会话挖掘、面向 Agent 的文档编写规范（**writing-for-agents**）以及去 AI 腔自然语言清洗（**unslop**）有机串联；它是对这些基础技能的编排调度，而非取而代之。
 
-## Flow
+## 执行流程
 
-### 0. Check for an existing skill
+### 0. 检查是否存在既有技能
 
-Look recursively for project-local `.claude/skills/**/*-mode/SKILL.md` files inside the repo and user-level `/Users/xiongzhipeng/.agents/skills/**/*-mode/SKILL.md` files matching the user's handle. Mode skills can live in a category directory, not only at the top level. If one exists, confirm intent with `AskUserQuestion` unless they already said "update my skill" or similar:
+递归检索当前仓库内项目级的 `.claude/skills/**/*-mode/SKILL.md` 文件，以及用户级`~/.agents/skills/**/*-mode/SKILL.md` 文件，核对是否存在与当前用户 Handle 匹配的既有模式技能。若已存在，通过 `AskUserQuestion` 向用户确认意图（除非用户已明确表示“更新我的技能”）：
+- **更新既有技能**（重复运行时的默认选择）。
+- **完全从零新建**（罕见场景；在动手前明确询问原因）。
 
-- Update the existing skill (default for repeat runs)
-- Start fresh (rare; ask why before doing it)
+更新模式下的后续流程调整：
+- 第 1 步仅挖掘自该技能上次修改以来的增量历史记录（`git log -1 --format=%cI <path>`）。
+- 第 2 步重点询问发生了哪些新变化或遗漏了哪些新规则，而非从零全量发问。
+- 第 4 步原地编辑既有文件：保留用户未曾推翻的成熟章节、根据最新证据修订过时内容、仅针对确有新增的强规则开辟全新章节。
 
-Update mode changes the rest of the flow:
-- Step 1 mines only history since the skill was last edited (`git log -1 --format=%cI <path>`).
-- Step 2 asks what's changed or missing, not what to capture from zero.
-- Step 4 edits the existing file in place. Preserve sections the user hasn't contradicted; revise ones with new evidence; add new sections only for genuinely new rules.
+### 1. 挖掘历史交互模式
 
-### 1. Mine their history
+在并发派发前，率先在本地定位当前工作区的物理会话记录。本地会话统一保存在 `~/.claude/projects/<slug>/<uuid>.jsonl`（当前工作区 `/Users/xiongzhipeng/.agents` 对应目录为 `~/.claude/projects/-Users-xiongzhipeng--agents/`）。严格限定在当前工作区范围内检索，严禁使用通配符跨工作区越界读取。
 
-Locate the active workspace's transcripts before fanning out. Claude Code stores them at `~/.claude/projects/<slug>/<uuid>.jsonl`. Use only the active workspace's `<slug>` directory. Do not glob across `~/.claude/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects. The confirmed directory for `/Users/xiongzhipeng/.agents` is `~/.claude/projects/-Users-xiongzhipeng--agents/`.
+全面扫描近期的 Agent 交互记录以提炼反复出现的行为模式。查阅 **dispatch** 技能规范，选用其 `Bulk` 类别，并发派发多个分析子 Agent。每个分析子 Agent 研读指定切片内的会话记录，检索以下高价值信号并返回带有证据指针的结构化清单：
+- **回复风格偏好**：篇幅长短、语气基调、结构格式、关于“太啰嗦/太晦涩”的人工纠偏。
+- **任务委派习惯**：子 Agent 使用倾向、模型选型、专用工作流、并行化诉求。
+- **验证与把关标准**：对“完成”的定义要求、单元测试 vs 真实环境实测、审查要求。
+- **代码与文本纪律**：遵循的核心原则、Linter/格式化工具链、特定代码风格规范。
+- **版本控制与工程流程**：Git Worktree 使用习惯、Commit 提交颗粒度、PR 堆叠与 Review/Merge 工具链。
+- **元规则偏好**：在任务中途先修技能的习惯、主动提出新增技能的诉求。
 
-Survey recent agent conversations within that scope for recurring patterns. Read the **dispatch** skill and use its `Bulk` class. Call `delegate_to_agent` once per history slice before collecting any result, using the active workspace's absolute path as `working_dir`; collect the returned `task_id`s with `get_delegation_status`. Each slice miner reads transcripts from the workspace-scoped path the parent provides, looks for the signals below, and returns a short structured list of patterns it saw with evidence pointers. Default signals worth hunting:
+在多路切片之间进行交叉比对：唯有在 2 个及以上切片中反复出现的模式才具备高置信度；仅出现单次的孤立信号通常予以舍弃。
 
-- Response preferences (length, tone, format, "dumb it down" corrections)
-- Delegation habits (subagents, models, specialized workflows, parallelism)
-- Verification posture (what "done" means; unit tests vs live repro; reviewers)
-- Code and prose discipline (style, principles cited, lint/format tools)
-- Process conventions (worktrees, commits, PRs, review/merge tooling)
-- Meta preferences (fixing skills mid-task, proposing new ones)
+### 2. 与用户直接结构化对齐
 
-Cross-check across slices before elevating a signal. Patterns seen in 2+ slices are high-confidence; lone signals are weak and usually get dropped.
+历史会话往往无法涵盖尚未发生的新诉求。使用 `AskUserQuestion` 工具提供结构化的多选选项，而非要求用户面对空白输入框从头手打，以大幅降低认知负担并提升沟通命中率。
 
-### 2. Ask the user directly
+标准形式：设计 1 到 2 轮结构化单选/多选题（每题提供 4 到 6 个具体选项，分类问题配置 `allow_multiple: true`）。先从宏观维度切入（“哪些工程领域对你最为关键？”），随后针对选中领域提供深度的具体偏好选项。在完成结构化问卷后，追加一个开放式自由提问以捕获选项未曾覆盖的盲区。
 
-Mining misses intent that hasn't come up yet. Use the `AskUserQuestion` tool with structured multiple-choice options rather than asking the user to type from scratch. Lower cognitive load, higher hit rate.
+严禁一次性抛出数十个繁琐问题：通常 2 轮结构化多选加 1 个开放问题已完全足够。
 
-Shape: one or two questions with 4-6 options each, `allow_multiple: true` for category questions. Start broad ("Which areas matter most?"), then follow up on selected areas with specific options. After the structured rounds, one free-form chat question catches anything the options missed.
+### 3. 聚合与分类提炼
 
-Don't dump 20 questions. Two structured rounds plus one open question is usually enough.
+将提炼出的所有有效信号聚合为清晰的规范章节（仅包含实际适用的维度）：
+- **Response style**：篇幅控制、语气基调、排版格式。
+- **Autonomy**：无需请示直接推进的边界、MCP 工具的主动调用。
+- **Understand first**：在探索或改动代码前优先调用的专项技能。
+- **Subagents**：默认策略、并行化原则、模型任务匹配、专用工作流。
+- **Prose / Code discipline**：核心工程原则、Lint 工具门禁、代码风格。
+- **Review and verify**：复现准则、验证技能、真实环境端到端验证。
+- **Process**：Git Worktree、Commit 颗粒度、PR 堆叠与合并工具链。
+- **Skills**：技能维护习惯、优先修技能原则、新技能提炼。
 
-### 3. Cluster findings
+**tomato-mode** 技能展示了标准的组织形态；可参考其颗粒度划分，但严禁直接复制其内容（用户的规则绝不完全等同于 tomato-mode 的规则）。
 
-Group the combined signals into sections. Common ones (use only what applies):
+### 4. 起草技能定义
 
-- **Response style**: length, tone, format.
-- **Autonomy**: how much to do without asking; MCP tool use.
-- **Understand first**: which skills to reach for when scoping or investigating a change.
-- **Subagents**: default, parallelism, model-to-task, specialized workflows.
-- **Prose / code discipline**: principles, lint tools, style guides.
-- **Review and verify**: repro posture, verification skills, live-testing tools.
-- **Process**: git worktrees, commits, PRs, review/merge tooling.
-- **Skills**: skill-authoring habits, fix-the-skill-first, proposing new skills.
+严格应用 **writing-for-agents** 技能编写技能正文，并研读其技能机制分册关于 Frontmatter、调用机制与路由的规则：
+- **存储路径**：若为仓库内项目级模式，存放于 `.claude/skills/<handle>/<handle>-mode/SKILL.md`（或 `.claude/skills/<handle>-mode/SKILL.md`）；若为用户级全局技能，写入 `/Users/xiongzhipeng/.agents/skills/<handle>-mode/SKILL.md`。
+- **Handle**：用户名字或其指定的唯一标识。
+- **Frontmatter 中的 `description`**：触发条件精准绑定其名字 + `/<handle>-mode` + “按该风格执行任务”，坚决杜绝绑定泛化关键词（如“写代码”或“审查 PR”）。
+- **Frontmatter 格式**：保持 `description` 为标准单 YAML 标量；在包含标点符号或长文本时使用引号包裹或使用 `description: >-` 折叠块。
+- **默认配置 `disable-model-invocation: true`**：模式技能通常包含强烈的主观偏好与厚重规程，必须仅在用户显式唤起（通过名称或斜杠命令）时生效，严禁在日常对话中通过 description 语义模糊匹配自动触发（除非用户显式要求每轮对话默认全局生效）。
 
-The **poteto-mode** skill shows the shape. Read it for granularity. Don't copy its content; the user's rules are not the same as poteto-mode's.
+### 5. 语言打磨与去 AI 腔
 
-### 4. Draft the skill
+对每一行文本严格应用 **unslop** 技能与 **writing-for-agents** 规范进行清洗打磨。
 
-Use the **writing-for-agents** skill to author the skill. Read its skill mechanics for frontmatter, invocation, and router rules. Placement:
+将初稿完整呈现给用户并收集反馈，进行针对性精简迭代。无情剔除所有废话套话：模式技能是一份干练的工程执行规程，绝非冗长的说明手册。
 
-- Path: preserve an existing mode skill's category. For a new project-local mode, use `.claude/skills/<handle>/<handle>-mode/SKILL.md` inside the repo when it has an established category for that handle; otherwise use `.claude/skills/<handle>-mode/SKILL.md`. If the user wants a user-level skill, write `/Users/xiongzhipeng/.agents/skills/<handle>-mode/SKILL.md`.
-- Handle: the user's first name or chosen identifier.
-- Frontmatter `description`: trigger on their name + `/<handle>-mode` + "work in their style", not on generic keywords like "write code" or "review PR".
-- Frontmatter formatting: follow the **writing-for-agents** skill mechanics. Keep `description` as one YAML scalar; quote it or use `description: >-` with indented continuation lines when punctuation or wrapping requires it.
-- Frontmatter `disable-model-invocation: true` by default. Mode skills are heavy and opinionated; they should only apply when the user explicitly invokes them (by name or slash command), not auto-trigger on description matching. Opt out only if the user explicitly wants their mode to apply on every turn.
+### 6. 正式合入落地
 
-### 5. Iterate on prose
+在独立的 Git Worktree 分支上开展改动，提交 commit 并开启 PR 供用户最终审查与合入，严禁直接向主干分支盲目推送。
 
-Apply the **unslop** and **writing-for-agents** skills to every line. Both apply to any agent-read prose, not just skills.
+## 安全护栏
 
-Show the draft to the user and take feedback. Expect multiple iterations. Cut ruthlessly; a mode skill is not a manual.
+- **严禁对单次偶发会话过度拟合。** 仅在某一次会话中随口提及、而在其他会话中被推翻的偏好属于瞬态噪音；必须经过多实例交叉验证后方可固化。
+- **杜绝自作聪明的空洞修饰。** 机械复述其他技能的内容、生造生硬比喻、或为 Agent 撰写充满“诗意”的浮夸辞藻均属于无意义的负债。保持绝对的极简与确定性。
+- **采用外部路径引用，严禁全文复制粘贴。** 用户依赖的其他既有技能应以路径指针形式引用，严禁大段复制其内容；对外部原则文档亦同。
+- **保持章节极致精炼。** 唯有当用户在该维度存在明确的、非默认的强规则时，才开辟对应章节。“清晰沟通”不构成一个有效章节；“段落保持精炼；方案比选统一使用表格；仅在内容真正对称并列时使用列表”才是合格的规则。
+- **角色称谓保持通用规范。** 在指令中使用“用户”或“人类”，避免硬编码作者的名字，以便其他协作者阅读或复用。
+- **严禁强行追求形式对称。** 若用户在某一维度并无特殊规则，直接完整省略该章节即可。精炼胜于臃肿。
 
-### 6. Land it
+## 适用边界
 
-Work in a worktree off main. Commit and open a PR so the user can review it. Don't push to main directly.
-
-## Guardrails
-
-- **Don't overfit to one conversation.** A preference stated once and contradicted another time is noise. Require multiple instances before codifying it.
-- **Don't be clever.** Restating other skills' contents, inventing metaphors, or writing "poetic" prose for an agent reader is cost without benefit. Keep it operational.
-- **Reference, don't inline.** Other skills the user relies on should appear as path references, not pasted excerpts. Same for any principle docs they maintain elsewhere.
-- **Keep sections minimal.** Only add a section if the user has a specific, non-default rule there. "Communicate clearly" is not a section. "Short paragraphs. Tables when comparing options. Bullets only when items are genuinely parallel." is.
-- **Name conventions generic.** Use "the user" or "the human" in imperatives, not the author's first name. Others may read or adopt the skill.
-- **Don't force symmetry.** If a user has no process rules worth writing down, skip the Process section entirely. Sparse is fine; bloated is not.
-
-## Evaluation
-
-A `-mode` skill is subjective output. A benchmark loop does not help here. Vibe-check with the user: does it read like them? Did it miss anything? Then ship.
-
-If the skill's trigger accuracy becomes a problem, revise the description with the **writing-for-agents** context-pointer rules.
-
-## When not to use
-
-- User wants a task-specific skill (not working conventions): use the **writing-for-agents** skill without the mining pass.
-- User wants to capture one narrow workflow (e.g. "how I write commit messages"): that's a regular skill, not a mode skill.
-
-## Reference files
-
-- The **poteto-mode** skill: example of the output shape.
-- The **unslop** skill: prose discipline for every line.
-- The **writing-for-agents** skill: agent-facing document structure, context pointers, and skill mechanics.
+- 用户需要的是针对特定任务的专项技能（而非个人工作习惯）：直接应用 **writing-for-agents** 编写，无需执行历史挖掘流程。
+- 用户需要固化某一个局部窄工作流（如“我如何编写 commit message”）：此属于常规专项技能，而非模式技能。
+- 

@@ -1,34 +1,34 @@
 ---
 name: principle-boundary-discipline
-description: "Apply when wiring validation, error handling, or framework adapters. Concentrate guards at system boundaries (CLI, config, network, external APIs); trust internal types and keep business logic in pure functions."
+description: "在设计入参校验、异常处理机制或第三方框架适配层时使用。将防御性逻辑严格集中在系统外部边界（CLI、配置解析、网络 I/O、外部 API），在系统内部充分信任类型契约，将核心业务逻辑封装为纯函数。"
 disable-model-invocation: true
 ---
 
 # Boundary Discipline
 
-Place validation, type narrowing, and error handling at system boundaries. Trust internal code unconditionally. Business logic lives in pure functions; the shell is thin and mechanical.
+将所有输入校验、类型收窄与异常捕获严格构筑在系统的外部边界之上。在系统内部代码中无条件信任内部强类型契约。将核心业务逻辑全部封装在纯函数中，保持外部宿主外壳轻薄且机械。
 
-**Why:** Scattered validation is noisy, redundant, and gives a false sense of safety. Validate data once at the boundary. Keep logic out of framework wiring so it can be tested without the framework.
+**核心理由。** 散落各处的零碎校验不仅制造大量冗余噪音，还会营造一种虚假的安全感。外部数据在系统入口边界处完成一次严密解析与校验已完全足够。将核心业务逻辑与外部框架生命周期彻底解耦，使核心逻辑在脱离繁重框架环境时依然能够进行轻量、高效的纯内存测试。
 
-**The pattern:**
-- **At boundaries** (CLI args, config files, external APIs, network protocols): validate, return errors, handle defensively.
-- **Inside the system:** typed data, error propagation, no re-validation. Trust the types.
-- **Across the boundary.** Expose domain concepts, not the boundary's private representation. Keep general-purpose mechanism inside and special-purpose policy at the edge.
+**核心模式：**
+- **在系统边界设防**（CLI 参数解析、配置文件读取、外部 API 调用响应、底层网络协议交互）：执行严格的数据校验、错误拦截与防御性适配。
+- **在系统内部通信**：完全依赖强类型契约保障，错误沿调用栈结构化向上传播，坚决杜绝在内部深层重复进行无意义的防御性校验。充分信任类型系统。
+- **跨越边界交互**：对外暴露清晰的领域概念模型，而非泄漏边界自身的私有底层表示。通用业务机制深植于核心内部，专属边缘策略独立驻留在外部适配层。
 
-**Applications:**
+**具体实践：**
 
-Validation and error handling:
-- Validate config at parse time (the boundary), not inside business logic
-- Parse raw data into domain types at the boundary
-- Do not re-export transport, storage, framework, or wire types through the public surface
-- No redundant nil checks deep in call chains if the boundary already validated
+校验与异常处理：
+- 在入口解析（Parsing）阶段一次性完成配置校验，坚决杜绝在深层业务逻辑内部临时做防御判断。
+- 在边界处直接将非结构化原始数据解析为强类型领域模型。
+- 严禁将底层传输层、存储层、ORM 或框架专属类型透过公开领域接口向外泄漏。
+- 若入口边界已完成严格校验，调用链深处严禁再编写冗余的空指针防御判断（如 `if (obj == null)`）。
 
-Code organization:
-- Business logic in pure functions with no framework dependencies
-- Parse functions: pure transforms from raw bytes to typed state
-- Prompt construction: structured state in, string out
-- Scoring and assessment: pure transforms from state to results
+代码组织与架构解耦：
+- 核心业务逻辑编写为不依赖任何第三方 UI 或运行时框架的纯函数（Pure functions）。
+- 解析函数设计为从原始字节/字符串到强类型状态的确定性纯变换。
+- Prompt 构建逻辑设计为“结构化状态输入 → 确定性字符串输出”的纯映射。
+- 评分、评估与判定逻辑设计为从状态快照到判定结果的纯变换。
 
-**The tests:**
-- "Is this data crossing a system boundary right now?" If not, validation is redundant.
-- "Can this be a pure function that the shell just calls?" If yes, extract it.
+**自查检验：**
+- “这份数据当前是否正在跨越系统外部边界？”若否，则深层校验纯属冗余代码。
+- “这段逻辑能否抽离为纯函数并由外部轻薄外壳直接调用？”若能，立即执行抽离。

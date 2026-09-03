@@ -1,222 +1,107 @@
 ---
 name: why
-description: "Use for 'why does X work this way', 'why we picked Y', design rationale, regressions, postmortems, or data-backed thresholds. Discovers available MCPs and queries each evidence category (source control, issue tracker, long-form docs, real-time chat, infrastructure observability, error tracking, product analytics warehouse) in parallel, then returns a cited read on decisions and tradeoffs. Use how for runtime behavior, and use research for external libraries, API specifications, or general technical facts."
+description: "用于“代码为何要这样设计”、“为何当初选择了 Y 方案”、历史设计动机溯源、性能/质量回归根因复盘、故障复盘（Postmortem）或基于数据指标的技术阈值论证。动态发现可用的 MCP 工具，并发检索七大证据体系（源码版本控制、Issue/Ticket 跟踪系统、长篇设计文档、实时群聊记录、基础设施可观测性、错误异常监控、产品数仓分析），并输出附带确凿引用证据与置信度分级的决策分析报告。针对运行时具体运作流程请使用 how，针对外部第三方库或通用技术事实请使用 research。"
 ---
 
 # Why
 
-Investigate the motivation and intent behind code. Why was it built this way? What edge cases were considered? What product, business, or operational constraints shaped the design? What alternatives were rejected, and why?
+深入调查既有代码背后的深层设计动机、演进意图与历史决策背景。代码为何被构造成当前形态？当初考虑了哪些极端边缘情况？受制于哪些产品、业务或底层运行时的硬性约束？曾有哪些备选方案被探索并最终否决，背后的根本原因是什么？
 
-Companion to the `how` skill. `how` answers what the code does and how it works. `why` answers what forces led to its shape.
+本技能与 `how` 技能形成深度互补：`how` 负责剖析代码当前具体在做什么、运行时如何流转；`why` 则负责深挖是何种历史力量与客观约束塑造了它如今的模样。
 
-## How this skill works
+## 运作机理与证据网络
 
-Historical context spreads across seven evidence categories: source control history, issue or ticket tracking, long-form documents, real-time team chat, infrastructure observability, error or exception tracking, and product analytics warehouses. You cannot predict from the question alone which one holds the answer, so the skill enumerates available MCPs at run time, maps each to a category, queries all seven in parallel, then synthesizes with explicit confidence calibration. Null results from searched categories are first-class evidence about how the decision was made; report them alongside positive findings. The default is coverage, not minimalism.
+系统的历史上下文碎片化地分布在**七大核心证据体系**中：
+1. **Source Control History**：Git 提交历史、GitHub PR 讨论串、Code Review 评审记录、内联注释与契约测试。
+2. **Issue / Ticket**：Linear、Jira、GitHub Issues、Shortcut 等平台上的需求描述、排期目标与外部合规要求。
+3. **Long-form Documents**：Notion、Confluence、RFC、PRD、架构决策记录（ADR）与故障复盘报告。
+4. **Real-time Team Chat**：Slack、Discord、Teams 等即时通信工具中关于临时决策、故障救火与轻量讨论的历史留痕。
+5. **Infrastructure Observability**：Datadog、Grafana、APM Trace、告警阈值历史与系统线上指标。
+6. **Error / Exception Tracking**：Sentry、Bugsnag、异常堆栈轨迹与发布版本关联数据。
+7. **Product Analytics Warehouse**：BigQuery、Snowflake、ClickHouse、Databricks 等数仓中的功能埋点、实验分桶与业务数据分布。
 
-## Operating Posture
+在面对问题前，我们无法凭空预判究竟哪一个证据源蕴含着核心答案。因此，本技能在运行时动态枚举环境中可用的 MCP，将其精准映射至上述七大体系，默认采取**全量并发检索**策略，随后进行严密的置信度校准与综合提炼。在检索过程中，某一证据体系返回的**空结果（Null result）同样属于第一类权威证据**（例如在 Issue 系统中完全未搜到相关 Ticket，本身即证明该改动当初未经过正式立项，属于自发行为），必须与正向证据并排呈现。默认追求全局覆盖，而非前期盲目收窄。
 
-Operate as a careful, cautious, precise investigator. Think like a detective piecing together a historical case from fragmentary records. When the record is thin, say so.
+## 核心调查准则与工程姿态
 
-Concretely:
+扮演一名极其严谨、审慎、客观的“技术历史侦探”，基于碎片化的留存记录还原历史真相。当历史记录模糊单薄时，如实承认，绝不脑补。
 
-- **Evidence before narrative.** Collect the pieces first, then see what story they support. Never pick a story and recruit the evidence that fits it.
-- **Precision over polish.** Prefer the exact quote and citation over a smooth paraphrase. A reader should be able to follow any claim back to its source and verify it in under a minute.
-- **Consider what you haven't seen.** The evidence you find is a sample, not the whole truth. Before concluding, ask what you would expect to see if an alternative explanation were true, and whether you looked for it.
-- **Name the gaps.** If a thread goes cold, a source isn't searchable, or a question has no answer, document the gap. Don't paper it over with an authoritative-sounding guess.
-- **Hedge on purpose.** When evidence is indirect, your language should signal it ("appears to", "likely", "suggests"). Confidence-matching phrasing is a feature of the output, not a stylistic choice the synthesizer may override.
-- **No shortcut by code-reading.** The code tells you what it does, rarely why it exists. Resist inferring intent from code shape.
+- **先立足确凿证据，再构建叙事链条。** 先全面收集原始事实碎片，再看它们能够客观支撑何种结论；坚决严禁先入为主设立叙事预设再挑拣证据迎合。
+- **精确度严格优于辞藻润色。** 坚决优先引用原始确凿的引文与直达指针（Commit SHA、PR #、Ticket ID、Permalink 等），使后续阅读者能够顺着指针在 1 分钟内亲自复核事实。
+- **深刻审视尚未被看见的信息。** 当前检索到的证据只是局部样本；在下结论前，自问“若存在相反的解释，我理应在系统中搜到何种证据，我是否已经检索了它？”
+- **坦诚标明信息缺口。** 若调查线索中断、某证据源当前不可检索、或核心问题在所有记录中均无答案，明确记录该缺口，严禁用看似权威的主观猜测掩盖空白。
+- **按置信度审慎推断。** 当证据属于间接推断时，语言必须明确释放审慎信号（如“表面迹象表明”、“极大概率”、“多项指标暗示”）；严禁综合者私自抹去审慎修饰词。
+- **严禁仅凭走读源码揣测动机。** 源码本身仅能展示它当前做了什么，极少能直接说明它为何被如此设计；坚决杜绝脱离历史事实对着代码形态空想业务动机。
 
-This posture is the working method, not a disclaimer.
+## 核心认知论与置信度体系
 
-## Core Epistemics
+历史证据往往是残缺不全的：Ticket 会被遗忘关闭、群聊记录可能过期被删、Commit 信息常常词不达意、原始作者可能早已离职。
 
-This skill builds a **patchwork understanding** from fragmented historical evidence. Tickets go stale. Chat threads get deleted. Commit messages lie. People change their minds between the PR description and the implementation. The original author may have left the company.
+必须对“已知客观事实”与“主观逻辑推断”划定极其分明的界限。核心目标不是编织一个听起来引人入胜的完美故事，而是客观呈现确凿证据、精确校准置信度、并将最终的技术裁决权交还给人类工程师。
 
-Be ruthlessly honest about what you know versus what you're inferring. The goal is not a satisfying story; it is to surface evidence, calibrate confidence, and let the user decide.
+- **一切论断必须附带明确出处。** 凡涉及意图的陈述，均须标注具体的 Commit Hash、PR 编号、Ticket ID、文档链接或行号注释；无法提供引文的，一律定性为主观推断。
+- **充分暴露历史矛盾。** 若两份历史记录存在事实冲突，原原本本将两方证据并排呈现，严禁暗中偏袒单方。
+- **多重假设并存。** 若客观证据能够自洽地支撑多种不同解释，将所有成立的假设及其支撑证据完整列出。
 
-Principles:
+详细的置信度分级体系参见 `references/epistemics.md`。
 
-- **Cite everything.** Every claim about intent should reference a specific commit hash, PR number, ticket ID, doc URL, chat permalink, or code comment. If you can't cite it, it's inference, not fact, and must be labeled as such.
-- **Prefer "appears to" over "because".** Hedge when evidence is indirect. Reserve confident language for direct, explicit evidence.
-- **Surface contradictions.** If two sources disagree, show both. Don't quietly pick the one that fits your narrative.
-- **Acknowledge gaps.** If a question has no answer in any source you searched, say so. An honest "we couldn't find out why" beats a confident guess.
-- **Multiple hypotheses are valid.** When the evidence fits several stories, present them all with the evidence for each. Let the user triangulate.
-- **Beware rationalization.** Code that makes sense today may have been written for reasons that no longer apply, or for no good reason at all. Don't retrofit intent.
+## 执行阶段
 
-Read `references/epistemics.md` for the full confidence framework and phrasing guide. The synthesizer must follow it.
+### 第 1 步：解析调查目标与核心问题
 
-## Step 1. Understand the Target and the Question
+精准提炼用户所指向的核心**目标（Target）**（代码片段、特定设计模式、特定功能、或某项技术选型）与核心**问题（Question）**：
+- 架构设计动机：“为何 X 要被设计成这种形态？”
+- 方案取舍权衡：“为何当初选了 X 而非 Y？”
+- 防御性边界溯源：“是由于踩了哪些极端边缘 Bug 才促使写下了这套防御逻辑？”
+- 外部客观约束：“是何种业务模式、合规条款或性能瓶颈逼出了这一设计？”
+- 历史废弃考量：“为何这段老代码至今依然存活在此处？”
 
-Parse what the user is asking. The **target** is usually a chunk of code, a pattern, a feature, or a named design decision. The **question** is usually one of:
+### 第 2 步：确立代码基线锚点（Code Anchor）
 
-- "Why was X designed this way?" Design rationale.
-- "Why do we do X instead of Y?" Tradeoff or alternatives.
-- "What edge cases motivated this?" Defensive reasoning.
-- "What business or product constraint led to this?" External forcing function.
-- "Why does this code still exist?" Dead-code territory.
-- "What's the history of X?" Broad archaeological sweep.
-
-If the target is vague ("why do we do it this way?" with no clear referent), make your best guess from conversation context (open files, recent edits, cursor location, what was just discussed). State your interpretation briefly so the user can redirect if you're off, then proceed.
-
-## Step 2. Establish the Code Anchor
-
-Before spawning investigators, anchor the investigation in concrete code. You need:
-
-- The relevant file path(s) and line range(s)
-- The key symbols (function names, class names, constants)
-- An initial commit list. The last few commits touching the target.
-- PR numbers from merge commits (pattern `(#1234)` in the subject line)
-
-Build this inline. It's cheap, and every investigator needs it.
+在派发外部调查员之前，率先在代码库中确立坚实的物理锚点，提取关键种子信息（文件路径、代码行范围、核心符号、触碰该代码的关键 Commit SHA、PR 编号、关联的 Issue ID）：
 
 ```bash
-# Blame target lines for last-touch commits
+# 追踪目标代码行的最后触碰提交
 git blame -L <start>,<end> <file>
 
-# Full file history, with patches, through renames
+# 跨文件重命名追踪完整提交历史
 git log --follow -p -- <file>
 
-# Last N commits touching the file, PR numbers visible
+# 检索最近触碰该文件的提交列表及关联 PR 编号
 git log --oneline -20 -- <file>
 
-# Extract PR numbers from a commit message
-git log -1 --format=%B <commit>
-```
-
-Pull PR bodies and discussion via `gh` for any substantive commits:
-
-```bash
+# 从 Merge Commit 中提取关联 PR 的元数据
 gh pr view <number> --json title,body,author,createdAt,mergedAt,labels,closingIssuesReferences,comments,reviews
 ```
 
-Capture this as seed context (file paths, symbols, commits, PR numbers, linked ticket IDs). Pass it to the investigators so they don't rediscover it.
+### 第 3 步：并发派发各证据体系独立调查员
 
-## Step 3. Spawn Parallel Investigators (default posture)
+查阅 **dispatch** 技能规范，选用其 `Bulk` 类别。针对环境中可用的匹配 MCP，每个证据体系派发一名专属的独立调查员，全并发运转。每个任务指令中必须显式注明 `Do not write or modify files`。
 
-**Default to the full parallel investigation.** Each evidence category lives in a different kind of system, and you cannot tell from the question alone which one holds the answer without looking. So look across every available category, in parallel, by default.
+若目标代码包含明显的防御性特征（如空值重试、超时兜底、限流熔断、降级开关、OOM 守护等），必须为调查员注入 `references/sources/incident-postmortem.md` 跨领域排查指南。
 
-### Discovery
+**证据体系独立调查员矩阵**：
+1. **源码版本控制调查员**：必发项。深挖 PR 讨论争论、代码评审意见、关联 Commit 记录与内联契约测试。
+2. **Issue / Ticket 任务跟踪调查员**：深挖外部业务驱动力、客户合规诉求、里程碑目标。
+3. **长篇设计文档调查员**：深挖 RFC、PRD、架构设计文档、被否决方案章节、ADR。
+4. **实时团队沟通调查员**：深挖应急群聊、即时问答讨论串、未沉淀至文档的实时口头决策。
+5. **基础设施可观测性调查员**：深挖线上监控指标突增、告警触发时间线、运行时瓶颈。
+6. **错误与异常追踪调查员**：深挖特定线上崩溃堆栈、异常频次骤降与版本发布的关联性。
+7. **产品数仓分析调查员**：深挖业务指标阶梯突变、实验分桶数据、特定阈值常数的真实物理来源（如特定限制常数恰好对应数仓 P99 数据分布）。
 
-Before spawning investigators, list the available MCPs from the current environment. Use the available-tools map when present. Otherwise inspect the environment's enabled MCP servers.
+**跳过调查员的唯一合法理由**：必须在最终报告的“检索证据源清单”中显式书面记录理由，仅允许两类情况：环境中缺乏该类别的对应 MCP 工具；或该类别属于“逻辑上被严格证明为完全不相关”（例如纯构建期本地脚本跳过线上异常监控）。严禁因“主观感觉可能没有”而随意跳过。
 
-Map each available MCP to one evidence category:
+### 第 4 步：全局综合与置信度校准
 
-1. Source control history
-2. Issue / ticket tracker
-3. Long-form documents
-4. Real-time team chat
-5. Infrastructure observability
-6. Error / exception tracking
-7. Product analytics warehouse
+查阅 **dispatch** 技能规范，选用其 `Judgment` 类别派发综合者 Agent。综合者接收全部调查员交回的客观事实、空结果与跳过说明，严格依据认知论量规完成证据交叉比对、置信度分级、并产出结构化的综合报告。
 
-Source control is always available through git and `gh`. For the other six, classify using the MCP name, server instructions, tool names, and resource descriptors. If an MCP could fit more than one category, choose the one matching its primary evidence. Record ambiguous cases in the coverage map.
+### 第 5 步：呈现最终调查报告
 
-Aim for a complete **coverage map**, not a minimal one. A null result from an issue tracker is evidence the decision was not ticketed, a useful fact in itself. Document the null, don't skip the search.
-
-Read the **dispatch** skill and use the agent type assigned to the `Bulk` class. Call `delegate_to_agent` once per matching category, use the workspace's absolute path as `working_dir`, and issue every call before collecting the returned `task_id`s with `get_delegation_status`. One investigator per category lets each specialize in one tool's query vocabulary and result shape. Don't ask one agent to cover multiple MCPs.
-
-`delegate_to_agent` cannot grant MCP access or enforce read-only operation. Confirm that the selected agent type exposes the category's MCP before dispatching it. Put `Do not write or modify files` in every investigator task.
-
-Each investigator gets:
-1. The base prompt from `references/investigator-prompt.md`
-2. The category playbook `references/sources/<source>.md` for the selected MCP, adapted from the examples in `references/source-playbook.md`
-3. The cross-cutting `references/sources/incident-postmortem.md` **if the target code looks defensive** (null checks, retry logic, timeout handling, rate limiting, feature flags, egress guards, OOM handlers)
-4. The code anchor from Step 2 (file paths, symbols, commit hashes, PR numbers, ticket IDs)
-5. The user's original question
-
-### Investigator roster. One per available evidence category
-
-Spawn one investigator per category that has a matching MCP. Each owns exactly one tool or MCP.
-
-Each entry lists what the category physically contains and the kind of "why" it uniquely surfaces. Use it to know what to expect back, how to name a gap when a category returns empty, and (only in the rare provably-irrelevant case) to justify a skip. Every category overlaps, but each owns a kind of evidence the others cannot recover.
-
-1. **Source control investigator**. Git history, `gh` for PRs, code comments, tests. Always spawn; the only guaranteed source. Best at surfacing *implementation-time rationale captured during review*. PR descriptions stating the problem, review threads debating alternatives, inline comments encoding non-obvious constraints, test names that encode motivating edge cases, and commit messages linking tickets or incidents. Most trustworthy because it ties directly to the diff that shipped.
-
-2. **Issue / ticket tracker investigator** (e.g. Linear, Jira, GitHub Issues, Plane, Shortcut MCP). Tickets, project docs, status updates, spec attachments. Best at surfacing *the product or business forcing function*. Customer requests ("Acme needs X for their SOC2 audit"), compliance deadlines, parent-initiative framing ("Q3 enterprise readiness"), ticket-level scope changes, and labels that categorize the motivation (`customer:*`, `incident-followup`, `compliance`, `perf-regression`). Strongest when the why is external to engineering.
-
-3. **Long-form documents investigator** (e.g. Notion, Confluence, Google Docs, Coda MCP). PRDs, specs, RFCs, design docs, ADRs, postmortems, team pages, meeting notes. Best at surfacing *long-form design rationale*. Problem statements, explicit "alternatives considered" and "rejected approaches" sections, strategy documents that set priorities, ADRs with finalized decisions, and postmortem action items that tie directly to code. Where the why is written out before it becomes code.
-
-4. **Real-time team chat investigator** (e.g. Slack, Discord, Microsoft Teams, Mattermost MCP). Feature-name and symbol searches, PR URL mentions, incident channels (`#sev-*`, `#incident-*`), author-handle activity around the ship date. Best at surfacing *real-time deliberation that never reached a doc*. Fire-drill decisions during incidents, Q&A between the PR author and reviewers, casual "we decided X because Y" threads, and rationale for small changes that didn't warrant a PRD. Especially important when the source control, ticket, and doc paper trail is thin.
-
-5. **Infrastructure observability investigator** (e.g. Datadog, New Relic, Honeycomb, Grafana, Splunk MCP). Metrics, monitors, dashboards, logs, APM traces, formal incidents. Infra/runtime view. Best at surfacing *infrastructure and runtime reality that motivated the code*. Monitor thresholds whose numbers match code constants, metric spikes in the window right before a PR merge, dashboards created as postmortem action items, incident timelines that reference the target. Strongest when the target reacts to an infra signal (timeouts, retries, rate limits, circuit breakers).
-
-6. **Error / exception tracking investigator** (e.g. Sentry, Rollbar, Bugsnag, Airbrake MCP). Issues, events, stack traces, releases. Best at surfacing *the specific exceptions and error trajectories that motivated defensive or corrective code*. Stack traces that pass through the target function, issues whose first-seen/last-seen windows bracket the PR ship date, release correlations that show an error stopping at a specific version. Strongest for catch blocks, null guards, type checks, retries, and other defenses.
-
-7. **Product analytics warehouse investigator** (e.g. Databricks, Snowflake, BigQuery, ClickHouse, dbt, Redshift MCP). Product-analytics events, experiment and feature-flag exposure tables, usage and billing events, query history, warehouse telemetry. Product/data view. Complements infrastructure observability by covering *user behavior and data reality* around the ship date rather than infra metrics. Best at surfacing *product and data reality that shaped the code*. Feature-usage trajectories (a step-function ramp from zero is strong evidence that this PR launched it), experiment/flag exposure data tied to ship decisions, pre-ship distributions that reveal where a threshold constant came from (e.g., `limit = 128 * 1024` matching the p99 of an upload-size column), and data-pipeline scale evidence for migrations/backfills. Strongest for flag-gated code, experiment-driven ships, data migrations, and "where did this number come from" questions.
-
-### When to skip an investigator
-
-Only skip with an **explicit, written justification** that goes in the final "Sources Consulted" section. Two valid reasons:
-
-- **No MCP is available for that category** in this environment. Flag this as a gap, not a choice. Example: "Real-time team chat skipped. No matching MCP available, so the conversational record was not searchable."
-- **The source is provably irrelevant**, not just "probably irrelevant." A high bar. Example: "Error / exception tracking skipped. Target is a build-time script with no runtime code path." Not "probably not in error tracking, it's a feature not an error."
-
-"It's pure feature code, error tracking won't have anything" is **not** sufficient, and neither is "I doubt long-form docs would have this." Run the search; let the null result speak. The cost of an investigator returning empty is one subagent. The cost of missing a design doc that actually exists is a wrong answer.
-
-If your scope assessment suggests a single-commit trivial target where the PR description already contains the complete answer, you may answer inline **only after** confirming all seven available category searches would be redundant. Say so explicitly. This should be rare.
-
-## Step 4. Synthesize
-
-Read the **dispatch** skill and call `delegate_to_agent` using the agent type assigned to the `Judgment` class. Use the workspace's absolute path as `working_dir`, keep the returned `task_id`, and collect it with `get_delegation_status`. The synthesizer's quality check spot-verifies citations, so confirm that this agent type exposes every MCP needed for those checks. Put `Do not write or modify files` in the task.
-
-The synthesizer gets:
-1. The investigator findings, including any null results and any categories skipped with justification
-2. The code anchor from Step 2 (file paths, symbols, commit hashes, PR numbers, ticket IDs)
-3. The user's original question
-4. The epistemics framework from `references/epistemics.md`
-5. The synthesizer prompt template from `references/synthesizer-prompt.md`
-
-Its job is the final output: a confidence-weighted, evidence-cited narrative with clearly separated "what we know" and "what we're inferring" sections, plus honest acknowledgment of gaps and null-result sources.
-
-## Step 5. Present
-
-Take the synthesizer's output and present it to the user. You may lightly edit for clarity or add context from the conversation, but **do not rewrite the confidence language**. The epistemic framing is the product. Dropping the hedges to sound more authoritative is the exact failure mode this skill exists to prevent.
-
-## Output Format
-
-The final output uses this structure. Adapt as needed, but keep the confidence separation intact.
-
-**The Question**. Restate what the user asked, concisely.
-
-**The Code in Question**. File paths, line ranges, and key symbols. One or two lines so the reader is anchored.
-
-**What We Found (direct evidence)**. Claims with explicit citations (PR #, ticket ID, doc URL, chat permalink, commit hash, code comment with file:line). Each bullet is a thing we have textual evidence for. Use present tense and quote or paraphrase the source.
-
-**What We Can Reasonably Infer**. Claims well-supported by indirect evidence or combinations of signals, but not explicitly stated anywhere. Each bullet must explain the inference chain: "Given A and B, it's likely that C." Use hedged language ("appears to", "likely", "suggests").
-
-**Competing Hypotheses**. If the evidence fits multiple stories, list them. For each, give the hypothesis, the evidence for it, and the evidence against it. Don't force a winner when the record doesn't support one. (Skip this section if there's a clear answer.)
-
-**What We Don't Know**. Explicit gaps. Questions the user asked that the evidence didn't answer. Sources we searched and came up empty. Be specific. "We searched the issue tracker for 'rate limit' and found no ticket discussing this specific threshold" is more useful than "we don't know why."
-
-**Sources Consulted**. One line per investigator, including the ones that returned nothing. The reader should see at a glance (a) which MCPs were queried, (b) which came back empty, and (c) which were skipped and why. This coverage map lets the user judge breadth and redirect if something obvious was missed.
-
-Format each line as: `- <Source>: <what was searched>. <what was found, or "no relevant results," or "skipped. reason">.`
-
-Example:
-- Source control (git/gh): `git log --follow backend/retry.ts`, PRs #49074, #47812. Found PR #49074 introduced exponential backoff and linked ENG-4421.
-- Issue tracker (Linear): searched for "retry" and ENG-4421. Found ENG-4421 parent issue but no discussion of backoff parameters.
-- Long-form docs (Notion): searched for "retry policy," "backend retries," "ENG-4421." No relevant results.
-- Real-time team chat (Slack): skipped. No matching MCP available in this environment. Gap: conversational record not searched.
-- Infrastructure observability (Datadog): searched for `retry_count` metric and monitors around 2024-08-14. Found monitor "Upstream 5xx rate > 1%" created same day as PR #49074.
-- Error / exception tracking (Sentry): searched for issues first-seen in Aug 2024 with stack through `retry.ts`. Found issue SENTRY-3821 spiking in the week before the PR.
-- Product analytics warehouse (Databricks): queried `<your_analytics_db>.<schema>.stg_backend_upstream_retry` for the 30-day window around 2024-08-14. Daily failure-classified event count fell from ~1.2k/day pre-PR to <50/day post-PR. Also checked `system.query.history` for relevant migration queries. None found.
-
-After the Sources Consulted block, if the user's `why` question is a precursor to actually changing this code, convert the lineage findings into a Preserve / Change / Avoid / Risk constraint set suitable for planning the change.
-
-## Common Failure Modes to Avoid
-
-- **Confident storytelling**. A plausible narrative built from thin evidence. A bullet with no citation goes in "inferred" or "hypotheses," not "what we found."
-- **Citing the code as evidence for its own intent**. "Handles the null case because it checks for null" is mechanics, not motivation. Motivation comes from an external source (PR discussion, ticket, comment, conversation) or is labeled as inference.
-- **Recency bias**. Assuming the most recent commit is authoritative. The current shape is often the accretion of many earlier decisions. Trace back.
-- **Sycophantic agreement**. If the user suggests a reason ("I assume this is for performance?"), treat it as a hypothesis and check the evidence independently, don't just confirm it.
-- **Skipping the gaps section**. An honest accounting of what you couldn't find out is part of the value.
-- **Skipping investigators by anticipation**. Deciding up front that "long-form docs probably don't have this" or "this isn't an error tracking thing" without searching. The default-to-all-seven posture prevents this. A null result is a data point; a skipped search is a blind spot.
-- **Collapsing investigators into one agent**. Each MCP has its own query vocabulary, result shape, and pitfalls; pooling them dilutes specialization and makes coverage harder to reason about. Always one investigator per category.
-
-## Reference Files
-
-- `references/epistemics.md`. Confidence tiers and phrasing guide. The synthesizer must follow it.
-- `references/investigator-prompt.md`. Base prompt template for investigator subagents.
-- `references/source-playbook.md`. Index pointing at the category playbooks below.
-- `references/sources/*.md`. One self-contained example playbook per category, plus cross-cutting `incident-postmortem.md`. Give an investigator the single file that matches its category and adapt it to the available MCP.
-- `references/synthesizer-prompt.md`. Prompt template for the synthesizer subagent, including the output format.
+输出格式严格按如下结构组织：
+- **The Question**：精炼复述用户的核心提问。
+- **The Code in Question**：确切的文件路径、代码行范围与核心符号。
+- **What We Found - Direct Evidence**：每一个事实断言均必须附带明确的客观引用（PR #、Ticket ID、文档 URL、Commit SHA、带有代码行号的内联注释）。
+- **What We Can Reasonably Infer**：基于多方间接证据链严密推导出的结论，清晰阐述推导链条（“鉴于 A 与 B，极大概率存在 C”），严格使用审慎修饰语。
+- **Competing Hypotheses**：若证据能够支撑多种不同解释，客观列出各个假设及其正反面证据。
+- **What We Don't Know**：客观列出检索中未能解答的盲区、以及返回空结果的证据源。
+- **Sources Consulted**：逐行清晰列出各个调查员所检索的系统、关键词、命中结果或跳过原因，使广度一目了然。

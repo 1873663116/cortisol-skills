@@ -1,22 +1,22 @@
 ---
 name: principle-outcome-oriented-execution
-description: "Apply during planned rewrites and migrations with explicit phase boundaries. Converge on the target architecture; don't preserve smooth intermediate states with throwaway compatibility code."
+description: "适用于具备清晰阶段规划的重大系统重写与迁移任务。以最终可验证的正确目标架构为优化核心，严禁用一次性临时兼容胶水代码去勉强维持过渡期平滑。"
 disable-model-invocation: true
 ---
 
-# Outcome-Oriented Execution
+# 结果导向执行（Outcome-Oriented Execution）
 
-Optimize for the intended, verifiable end state rather than preserving smooth intermediate states.
+在推进重大重写与系统迁移时，以预期中清晰、可闭环验证的目标架构终态为核心优化方向，而非不惜代价地维持中间过渡状态的绝对平滑。
 
-**Why:** Keeping every intermediate step fully stable often creates temporary compatibility code that becomes long-lived debt. Converge on the target architecture and prove correctness at explicit verification boundaries.
+**核心理由。** 执着于让每一个中间细分步骤都保持绝对可用与平滑过渡，往往会迫使工程师编写大量临时性的兼容适配层与胶水代码。这些临时代码一旦引入，极易反客为主演变为难以彻底清理的长期技术债务。直接向目标架构坚决收敛，并在明确划分的验证边界上严格证明正确性。
 
-**Core rule:**
-- Prioritize end-state integrity over transitional stability
-- Intermediate breakage is acceptable when it is planned, scoped, and reversible
-- Always run final verification before declaring done
+**核心准则：**
+- 终态架构的纯粹性与完整性，严格优先于过渡期的局部稳定性。
+- 中间过渡状态出现受控的局部破坏是完全可接受的，前提是该破坏在计划之内、影响范围清晰界定且具备可回退性。
+- 在正式宣布任务完成前，必须针对整体系统执行全量最终验证。
 
-**Guardrails:**
-- Use this for planned rewrites and migrations with explicit phase boundaries
-- Declare where temporary breakage is acceptable
-- Keep high-signal checks for actively touched areas while migrating
-- Require full static and runtime verification at plan completion
+**安全护栏：**
+- 本原则仅适用于具备严密阶段切分的大型计划性重写与系统迁移工程。
+- 必须显式声明并记录哪些局部位置允许在过渡期间暂时处于非正常状态。
+- 在迁移实施过程中，对当前正在改动的核心区域始终保持高信号的自动化检查。
+- 计划收尾阶段，必须执行严格完整的静态类型检查与端到端运行时动态验证。

@@ -1,24 +1,26 @@
 ---
 name: principle-make-operations-idempotent
-description: "Apply when designing commands, lifecycle steps, or processing loops that run amid crashes, restarts, and retries. Converge to the same end state regardless of partial prior runs."
+description: "设计要在崩溃、重启和重试中稳定运行的命令、生命周期流程或处理循环时使用。无论此前执行过多少次、中断停在何处，均能稳定收敛至同一个正确终态。"
 disable-model-invocation: true
 ---
 
-# Make Operations Idempotent
+# 确保操作幂等（Make Operations Idempotent）
 
-Design operations so they converge to the correct state regardless of how many times they run or where they start from. Every state-mutating operation should answer: "What happens if this runs twice? What happens if the previous run crashed halfway?"
+在设计任何关键操作时，必须确保其无论被重复执行多少次、无论从哪个中间状态切入，都能稳定收敛至正确的最终状态。每一个改变系统状态的操作都必须能够严密回答两个问题：
+1. 若该逻辑连续运行两次会发生什么？
+2. 若上一次运行在任意可能的中间节点突然崩溃，后续如何恢复？
 
-**Why:** Commands, lifecycle operations, and processing loops run where crashes, restarts, and retries are normal. If partial state changes the next run's outcome, every restart becomes a debugging session.
+**核心理由。** 无论是在命令行工具、复杂生命周期钩子还是持续轮询的处理循环中，偶发崩溃、异常重启与超时重试都是分布式运行环境中的常态。若上次执行残留的中间脏状态会干扰下一次运行的结果，那么每一次重启都将演变为一场痛苦的线上排查灾难。
 
-**The pattern:**
-- Convergent startup: scan for existing state, clean stale artifacts, adopt live sessions
-- Content-based cleanup: compare by content equivalence, not creation order
-- Self-healing locks: use PID-based stale lock detection
-- Idempotent scheduling: failed work respawns cleanly, fresh input regenerated after each cycle
+**核心模式：**
+- **收敛式冷启动。** 启动时主动扫描既有持久化状态，自动清理陈旧孤儿产物，无缝接管仍处于活跃中的有效会话。
+- **基于内容等价性的清理机制。** 依据内容的实质等价性进行状态比对与对账，而非依赖不可靠的创建先后时序。
+- **具备自愈能力的锁机制。** 引入基于进程 PID 与心跳探测的陈旧锁超时清理机制，防止因进程异常退出导致死锁。
+- **幂等化任务调度。** 执行失败的任务能够干净利落地重新拉起，在每轮迭代结束后重新生成最新的确定性输入。
 
-**The test:**
-1. What happens if this runs twice in a row?
-2. What happens if the previous run crashed at every possible point?
-3. Does re-execution converge to the same end state?
+**检验准则：**
+1. 该逻辑若连续执行两次，系统状态是否完全一致？
+2. 若上一次执行在每一个潜在的代码行崩溃，重新执行是否会产生脏数据或引发死锁？
+3. 重复执行是否能够百分之百收敛至相同的合法终态？
 
-If any answer is "it depends on what state was left behind," the operation needs a reconciliation step.
+只要上述任意一个问题的答案为“取决于上次留下了什么状态”，该操作就必须补齐明确的状态对账与自愈恢复逻辑。

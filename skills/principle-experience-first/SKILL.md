@@ -1,19 +1,19 @@
 ---
 name: principle-experience-first
-description: "Apply when product, UX, or feature-scope tradeoffs come up. Choose user delight over implementation convenience; ship fewer polished features over more rough ones."
+description: "在面临产品定义、交互体验或功能范围的取舍权衡时使用。坚决选择能让使用者真正满意的方案，而非仅仅有利于实现者偷懒省事的方案；宁可将少数核心功能打磨到极致，也绝不粗制滥造一堆粗糙的功能堆砌。"
 disable-model-invocation: true
 ---
 
 # Experience First
 
-The product is the experience. Every technical decision either helps or hurts it. When implementation convenience conflicts with user delight, choose delight.
+产品即体验。代码中的每一个技术选型与实现细节，要么是在为整体体验增光添彩，要么是在对最终体验造成损伤。当“实现上的省事便利”与“使用者的卓越满意度”发生冲突时，毫不犹豫地选择后者。
 
-- Say no to 1,000 things (every feature, control, and option must earn its place)
-- Ship less, ship better (polished experience with three features beats rough one with ten)
-- Prototype before committing (design decisions are cheaper in throwaway HTML than production code)
-- Sweat the details (transitions, alignment, spacing, feedback, error states)
-- Tighten the core loop (every feature should serve the central workflow or get out of the way)
+- **对一千件无关紧要的事坚决说“不”。** 每一个新增功能、每一个 UI 控件、每一个配置开关都必须能够充分证明其存在的不可替代性。
+- **少做一点，做精一点。** 将三个核心功能深度打磨到极致，远胜过堆砌十个体验粗糙、漏洞百出的半成品。
+- **敲定设计前先做原型探索。** 在低成本、用完即弃的原型中快速试错迭代，其代价远比在生产级代码中反复折腾便宜得多。
+- **死磕核心细节。** 严密把控交互转场、视觉对齐、间距节奏、操作即时反馈以及各类异常边界状态的友好呈现。
+- **聚焦收紧核心主流程闭环。** 每一个设计要素要么深度服务于核心主流程，要么果断让路予以剔除。
 
-The user is whoever consumes the work. For a UI that is the end user. For a library or an internal API it is the colleague who imports it. The engineer who maintains the code next is a user too. Weigh their experience the same way, and explain impact from their seat.
+**广义“使用者”视角。** “用户”涵盖消费当前交付成果的任何角色：对于 UI 而言是终端用户；对于组件库或底层框架而言是调用该 API 的工程师同事；对于代码实现而言则是后续接手维护该模块的下一位开发者。必须站在他们的立场上同理衡量体验感受，并在汇报说明中从其视角精准阐述改动带来的实质影响。
 
-Foundations should serve the experience, not the other way around. Foundational thinking governs the *sequence* of work; this principle governs the *target*.
+底层技术与基础设施应当全力服务于卓越体验，而非让体验向技术妥协。[底层先导思维](../principle-foundational-thinking/SKILL.md)统筹的是开发工作的**推进时序**，而本原则确立的则是整个系统演进的**终极目标**。

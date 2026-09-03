@@ -1,22 +1,22 @@
 ---
 name: principle-subtract-before-you-add
-description: "Apply when sequencing an addition, refactor, or rewrite. Remove dead weight, redundant validators, and stub references first, then build on the simpler base."
+description: "规划功能新增、架构重构或系统重写顺序时使用。在更干净简约的底座上构建新能力前，率先彻底清除历史包袱、冗余校验逻辑与废弃残桩引用。"
 disable-model-invocation: true
 ---
 
-# Subtract Before You Add
+# 先做减法再做加法（Subtract Before You Add）
 
-When evolving a system, remove complexity first, then build. Deletion gives you a simpler base, which makes the next addition smaller and less brittle.
+在演进与扩展系统时，必须先主动剔除无用复杂度与历史死重，再动手构建新功能。先做减法能够为你赢得一个更加清晰简约的代码底座，使后续的新增改动规模更小、逻辑更内聚且更不易脆弱破损。
 
-**Why:** Adding to a complex system compounds complexity. Removing first cuts the surface area, reveals the essential structure, and usually makes the next design obvious. Default to subtraction.
+**核心理由。** 在本就庞大臃肿的系统上直接追加新逻辑，会导致系统复杂度呈指数级叠加扩散。率先执行减法清理能够有效收窄系统的对外表面积，让核心本质骨架清晰显现，往往还会使下一步的新设计方案变得水到渠成、不言自明。默认优先采用减法思维。
 
-Make simplification a continual investment. Leave the design slightly simpler and more capable behind the same or smaller surface than you found it.
+将代码精简视为一项贯穿始终的持续工程投入：每次任务交付后，系统应当比你接手前变得更加精简优雅、核心能力更为强悍，且系统的对外表面积保持恒定甚至进一步收敛。
 
-**The pattern:**
-- Sequence removal before construction
-- Cut before you polish (get to the minimum before investing in quality)
-- Design for observed usage, not speculative edge cases
-- No speculative validators, parsers, or guards beyond what the spec demands
-- Out-of-spec features drag validators behind them. Persistence, retry-on-startup, and schema migration each need guards to defend their inputs.
-- Simplify prompts (remove redundant instructions, excessive templates)
-- When a reference has no novel content, delete it rather than leaving a stub
+**实践规范：**
+- 在任务编排上，将清理与删除步骤安排在构建新功能之前。
+- 先大幅裁减冗余再精细打磨（率先收敛至最小可用内核，再投入精力保障交付质量）。
+- 严格面向真实观察到的确定性业务场景设计，拒绝为凭空设想的边缘极端情况买单。
+- 凡需求规格未作明确要求的投机性校验器、前置解析器与防御代码，一律坚决不写。
+- 需求外的冗余功能往往会倒逼引入大量配套的校验逻辑；如过度设计的持久化、启动重试与 Schema 迁移，每一项都会拖着繁琐的防御代码来守护各自的非法输入。
+- 精简 Prompt 指令与规范文档（果断剔除冗余套话与过度繁琐的样板模板）。
+- 当某个引用或符号已无任何实质业务内容时，直接物理删除，坚决不保留毫无意义的空壳残桩。
