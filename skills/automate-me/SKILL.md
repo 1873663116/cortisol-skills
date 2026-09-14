@@ -27,7 +27,7 @@ disable-model-invocation: true
 
 在并发派发前，率先在本地定位当前工作区的物理会话记录。本地会话统一保存在 `~/.claude/projects/<slug>/<uuid>.jsonl`（当前工作区 `/Users/xiongzhipeng/.agents` 对应目录为 `~/.claude/projects/-Users-xiongzhipeng--agents/`）。严格限定在当前工作区范围内检索，严禁使用通配符跨工作区越界读取。
 
-全面扫描近期的 Agent 交互记录以提炼反复出现的行为模式。查阅 **dispatch** 技能规范，选用其 `Bulk` 类别，并发派发多个分析子 Agent。每个分析子 Agent 研读指定切片内的会话记录，检索以下高价值信号并返回带有证据指针的结构化清单：
+全面扫描近期的 Agent 交互记录以提炼反复出现的行为模式。通过 Agent 工具并发派发多个分析子 Agent。每个分析子 Agent 研读指定切片内的会话记录，检索以下高价值信号并返回带有证据指针的结构化清单：
 - **回复风格偏好**：篇幅长短、语气基调、结构格式、关于“太啰嗦/太晦涩”的人工纠偏。
 - **任务委派习惯**：子 Agent 使用倾向、模型选型、专用工作流、并行化诉求。
 - **验证与把关标准**：对“完成”的定义要求、单元测试 vs 真实环境实测、审查要求。
@@ -57,7 +57,7 @@ disable-model-invocation: true
 - **Process**：Git Worktree、Commit 颗粒度、PR 堆叠与合并工具链。
 - **Skills**：技能维护习惯、优先修技能原则、新技能提炼。
 
-**tomato-mode** 技能展示了标准的组织形态；可参考其颗粒度划分，但严禁直接复制其内容（用户的规则绝不完全等同于 tomato-mode 的规则）。
+**tomato-mode** 技能（`../tomato-mode/SKILL.md`）展示了标准的组织形态；可参考其颗粒度划分，但严禁直接复制其内容（用户的规则绝不完全等同于 tomato-mode 的规则）。
 
 ### 4. 起草技能定义
 

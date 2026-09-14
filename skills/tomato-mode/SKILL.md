@@ -1,6 +1,6 @@
 ---
 name: tomato-mode
-description: Tomato mode 的 agent 风格：简洁详尽的回复、经 Orchestration 审慎委派、消除 AI 腔、保持代码精简、输出可验证的工程成果。用于 tomato、/tomato-mode 或要求按该风格执行任务的场景。
+description: Tomato mode 的 agent 风格：简洁详尽的回复、通过 Agent 工具委派、消除 AI 腔、保持代码精简、输出可验证的工程成果。用于 tomato、/tomato-mode 或要求按该风格执行任务的场景。
 disable-model-invocation: true
 ---
 
@@ -19,7 +19,7 @@ disable-model-invocation: true
 - 编写任何代码前 → 必须先明确定义并命名核心数据结构与形态（data shape），并遵循 `../principle-model-the-domain/SKILL.md` 选取其组织结构。
 - 跨越函数或模块边界的代码改动 → 调用 **architect** 技能（`../architect/SKILL.md`），在动手实现前先并行探索多种设计方案。
 - 并行扇出任务 → 覆盖率矩阵、竞速赛马、极限压测通关用例（gauntlet）以及分片探索等场景，调用 **swarm** 技能（`../swarm/SKILL.md`）。需要针对设计方案或实现代码进行擂台比选（bakeoff）、基线选优与优势嫁接的场景，调用 **arena** 技能（`../arena/SKILL.md`）。
-- 存在争议的设计方案 → 合并上线前调用 **interrogate** 技能（`../interrogate/SKILL.md`）进行多模型对抗式深度审查。
+- 存在争议的设计方案 → 合并上线前调用 **interrogate** 技能（`../interrogate/SKILL.md`）进行对抗式深度审查。
 - 非简单的多步骤任务 → 明确记录吞吐检查点（见 Feature playbook 步骤 3）。
 - 任何正文或自然语言文本 → 应用 **unslop** 技能。你的回复本身属于正文输出，必须遵循**撰写回复**章节的要求。
 - 编写文档、RFC、README、PR 说明或 commit 信息 → 调用 **technical-writing** 技能（`../technical-writing/SKILL.md`）。
@@ -82,8 +82,8 @@ disable-model-invocation: true
 ## Subagents
 
 使用 tomato-mode 代表用户允许进行任务委派，委派均无需请示。
-所有委派经 **orchestration** 技能（`../orchestration/SKILL.md`）执行，由 Orca 运行时创建任务并派发 Worker。委派前先阅读 **dispatch** 技能（`../dispatch/SKILL.md`）：它掌管角色分类矩阵与角色→模型路由表。具有专用路由流程的技能（`how`、`why`、`interrogate`、`reflect`、`swarm`）会指明其所需的专属角色。
-你对每一份委派出去的工作负最终责任。必须亲自审查其生成的 diff，并撰写你自己的分析总结。“第二意见（Second opinion）”，是指将同一个 prompt 发送给承载不同模型的 Worker 独立执行。若两者结论一致，则是极高可信度的决策信号。
+所有委派通过 Agent 工具执行。各技能规定具体角色与任务分工。
+你对每一份委派出去的工作负最终责任。必须亲自审查其生成的 diff，并撰写你自己的分析总结。“第二意见（Second opinion）”，是指将同一个 prompt 发送给两个独立的 Worker 各自执行。若两者结论一致，则是极高可信度的决策信号。
 
 ## Writing the reply
 

@@ -34,19 +34,19 @@ ls -t ~/.claude/projects/<slug>/*.jsonl 2>/dev/null | head -10
 
 ### 2. 并发派发三路独立审查者
 
-查阅 **dispatch** 技能规范，并发派发三位审查者，分别承载互补的审视视角。审查者任务中必须显式注明 `Do not write or modify files`（只读审查，由主编排父代统一执行修改）：
+通过 Agent 工具并发派发三位审查者，分别承载互补的审视视角。审查者任务中必须显式注明 `Do not write or modify files`（只读审查，由主编排父代统一执行修改）：
 
-| 审视视角 | 调度角色 | 基础 Prompt 模板 |
-|---|---|---|
-| **判断力（Judgment）** | `Judgment` 类别 | `references/judgment-reviewer.md` |
-| **工具链（Tooling）** | `reflect tooling` 类别 | `references/tooling-reviewer.md` |
-| **发散与盲区（Divergent）** | `Judgment` 类别 | `references/divergent-reviewer.md` |
+| 审视视角 | 基础 Prompt 模板 |
+|---|---|
+| **判断力（Judgment）** | `references/judgment-reviewer.md` |
+| **工具链（Tooling）** | `references/tooling-reviewer.md` |
+| **发散与盲区（Divergent）** | `references/divergent-reviewer.md` |
 
 将模板原样分发，并在对应占位符处填入会话记录文件的绝对路径或会话摘要。
 
 ### 3. 全局综合与置信度归类
 
-查阅 **dispatch** 技能规范，选用其 `Judgment` 类别派发综合者 Agent。综合者任务中显式注明 `Do not write or modify files`。使用 `references/synthesizer.md` 模板，内联三位审查者的完整报告。综合者输出结构化的 **Accepted（采纳）/ Rejected（驳回）/ Backlog（待办）** 清单。
+通过 Agent 工具派发综合者 Agent。综合者任务中显式注明 `Do not write or modify files`。使用 `references/synthesizer.md` 模板，内联三位审查者的完整报告。综合者输出结构化的 **Accepted（采纳）/ Rejected（驳回）/ Backlog（待办）** 清单。
 
 ### 4. 机制化固化前置校验（Structural enforcement check）
 

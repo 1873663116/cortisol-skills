@@ -10,7 +10,7 @@ description: "用于“X 是怎么运作的”这类技术咨询、改动代码�
 支持两种运作模式：
 
 1. **Explainer Mode（默认）**：全面探索代码库，产出一份脉络清晰、见解深刻的架构讲解。
-2. **Critique Mode**：先产出架构讲解，随后跨多个模型供应商并发派出独立批评者，深度挖掘既有架构的设计缺陷。
+2. **Critique Mode**：先产出架构讲解，随后并发派出多个独立批评者，深度挖掘既有架构的设计缺陷。
 
 ## 讲解模式
 
@@ -40,7 +40,7 @@ description: "用于“X 是怎么运作的”这类技术咨询、改动代码�
 
 具体的切分维度取决于问题本身的领域特性。窄问题派发 2 个探索者即可；庞大子系统最多派发 4 个。
 
-查阅 **dispatch** 技能规范，选用其 `Bulk` 类别，经 **orchestration** 技能并发派发所有探索者。
+通过 Agent 工具并发派发所有探索者。
 
 每个探索者的基础 Prompt 均基于 `references/explorer-prompt.md` 构建，并注入其专属的切片探索维度。每个探索者均须遵循：
 - 由宏观到微观：使用 Glob 快速定位关键目录与文件，使用 Grep 检索核心类型、接口与类定义。
@@ -57,13 +57,13 @@ description: "用于“X 是怎么运作的”这类技术咨询、改动代码�
 
 ### 第 2b 步：直接讲解（轻量场景）
 
-查阅 **dispatch** 技能规范，选用其 `Judgment` 类别派发讲解者。任务指令中显式注明 `Do not write or modify files`。
+通过 Agent 工具派发讲解者。任务指令中显式注明 `Do not write or modify files`。
 
 讲解者自主完成代码库探索（结合 Glob、Grep、Read），直接输出完整的架构讲解。格式与风格遵循 `references/explainer-prompt.md`，直接进入第 4 步。
 
 ### 第 3 步：全局综合（复杂场景）
 
-在所有探索者完成任务返回后，查阅 **dispatch** 技能规范，选用其 `Judgment` 类别派发综合讲解者。任务指令中显式注明 `Do not write or modify files`。
+在所有探索者完成任务返回后，通过 Agent 工具派发综合讲解者。任务指令中显式注明 `Do not write or modify files`。
 
 讲解者接收全部探索者的事实发现，编写面向人类工程师的高质量架构讲解（输出格式见下文，完整 Prompt 模板参见 `references/explainer-prompt.md`）。讲解者负责调和重叠视角、消除局部矛盾，将碎片化的探索切片熔铸为一幅浑然一体的架构全景图。
 
@@ -91,7 +91,7 @@ description: "用于“X 是怎么运作的”这类技术咨询、改动代码�
 
 ### 第 2 步：并发派发独立批评者
 
-在架构讲解产出后，查阅 **dispatch** 技能规范，选用其 `Panel` 类别。跨多个不同模型供应商并发派发批评者。任务指令中显式注明 `Do not write or modify files`。
+在架构讲解产出后，通过 Agent 工具并发派发多个独立批评者。任务指令中显式注明 `Do not write or modify files`。
 
 Prompt 模板参见 `references/critic-prompt.md`。每个批评者均接收：
 1. 第 1 步产出的架构讲解文档（避免重复低效探索）。

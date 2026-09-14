@@ -76,7 +76,7 @@ gh pr view <number> --json title,body,author,createdAt,mergedAt,labels,closingIs
 
 ### 第 3 步：并发派发各证据体系独立调查员
 
-查阅 **dispatch** 技能规范，选用其 `Bulk` 类别。针对环境中可用的匹配 MCP，每个证据体系派发一名专属的独立调查员，全并发运转。每个任务指令中必须显式注明 `Do not write or modify files`。
+通过 Agent 工具针对环境中可用的匹配 MCP，为每个证据体系派发一名专属的独立调查员，全并发运转。每个任务指令中必须显式注明 `Do not write or modify files`。
 
 若目标代码包含明显的防御性特征（如空值重试、超时兜底、限流熔断、降级开关、OOM 守护等），必须为调查员注入 `references/sources/incident-postmortem.md` 跨领域排查指南。
 
@@ -93,7 +93,7 @@ gh pr view <number> --json title,body,author,createdAt,mergedAt,labels,closingIs
 
 ### 第 4 步：全局综合与置信度校准
 
-查阅 **dispatch** 技能规范，选用其 `Judgment` 类别派发综合者 Agent。综合者接收全部调查员交回的客观事实、空结果与跳过说明，严格依据认知论量规完成证据交叉比对、置信度分级、并产出结构化的综合报告。
+通过 Agent 工具派发综合者 Agent。综合者接收全部调查员交回的客观事实、空结果与跳过说明，严格依据认知论量规完成证据交叉比对、置信度分级、并产出结构化的综合报告。
 
 ### 第 5 步：呈现最终调查报告
 

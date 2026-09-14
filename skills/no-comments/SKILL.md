@@ -16,7 +16,7 @@ disable-model-invocation: true
 
 ## 执行步骤
 
-1. **派发 Comment Sicko**：查阅 **dispatch** 技能规范，选用其 `Letter-precise` 类别。派出一个独立 Agent，任务指令指向 `/Users/xiongzhipeng/.agents/pstack/agents/comment-sicko.md`，传入明确的审计范围，并显式注明 `Do not write or modify files`。
+1. **派发 Comment Sicko**：通过 Agent 工具派出一个独立 Agent，任务指令指向 `/Users/xiongzhipeng/.agents/pstack/agents/comment-sicko.md`，传入明确的审计范围，并显式注明 `Do not write or modify files`。
 2. **严格审查报告与判定**：以下几类违规判定必须直接予以驳回：擅自篡改业务应用代码、越界超出指定范围、错误删除了受例外条款保护的注释、对 `MUST KILL` 的理由陈述有误、以及将有意保留的合法逻辑错误判定为违规。针对代码中意外暴露的设计瑕疵而提出的重构诉求属于合理意见，应当予以采纳。被驳回的冗余注释坚决不予恢复。一条“保留”意见唯有当能确凿证明其解释的是我们当前无法修改的外部客观客观约束时方可成立。深度审计是否存在遗漏的作用域级 Lint 规则或 TypeScript 忽略注解（如 `@ts-ignore`、`eslint-disable`），涉及代码正确性或安全性的违规抑制声明一律属于必须彻底拔除的 `MUST KILL`。在采纳缺乏充分依据的 `IMPORTANT` 或 `do not remove` 类注释前，率先对相关符号调用 `/how` 或 `/why` 进行历史溯源。删除判定存在歧义时不予恢复；保留判定被推翻或存疑时坚决予以物理删除。若审计报告被整体驳回，在明确指出失败根因后可回滚重跑一次；若二次执行仍被驳回，将其作为未决问题如实上报，并判定当前任务未通过。
 3. **即时清理琐碎且已采纳的标记**：如直接物理删除死路径、剔除多余参数、替换为官方正式 API。若某处修复需要率先确立设计形态，针对涉及的核心代码调用 `/architect` 进行方案草图设计（Architect 负责敲定骨架，后续步骤负责具体落地）。
 4. **在受控范围内实施最小化根因修复**：彻底拔除被指明的每一处临时绕行方案。若根本病因超出当前任务范围，仅落地当前范围内的最小必要修复，其余深层问题作为独立未决事项如实上报。请注意：[直击根本原因](../principle-fix-root-causes/SKILL.md)与[第一性原理重构](../principle-redesign-from-first-principles/SKILL.md)原则仅用于指导设计意图（即根除病因而非生硬外挂），绝不构成擅自扩大任务边界或擅自修复外部不相干模块的授权。

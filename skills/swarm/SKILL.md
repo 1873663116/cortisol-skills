@@ -25,7 +25,7 @@ disable-model-invocation: true
    - **并行竞速模式（Race）**：让 N 个 Worker 针对同一份任务规范独立并行探索；在派发前明确声明选择规则：`first pass`（首个通过即采纳）、`rank all`（全量评估排序）或 `best-of`（综合评选最优）。
    - **混合模式（Hybrid）**：分片与局部竞速结合。
 3. **确定 Worker 规模 N**：由用户直接指定，或根据任务切片自然推导。N 代表 Worker 总数，而非云端并发限制。
-4. **选定模型类别**：查阅 **dispatch** 技能规范，选用其 `Bulk` 类别；唯有当某一路任务具有特殊的推理要求时，才单独指定对应类别。在竞速模式下，必须在一开始明确注明各路 Worker 分别采用何种 Agent 模型。
+4. **派发 Worker**：通过 Agent 工具派发各路 Worker，并明确各自的任务与验收标准。
 5. **分配隔离的写入空间**：凡涉及写操作的 Worker，必须为其分配物理隔离的独立输出位置（优先使用 Git Worktree、专用独立分支，或 `/tmp/swarm-<slug>/worker-<n>/`）。
 
 ## Phase B: 并发扇出执行（Fan out）
