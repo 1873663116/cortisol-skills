@@ -1,0 +1,4 @@
+interface:
+  display_name: "建模项目状态管理"
+  short_description: "初始化建模项目，以状态判断导航设计、制作与验证，并维护项目资料"
+  default_prompt: "使用 $modeling-project 检查当前目录，初始化或更新项目地图，并判断本次建模任务的状态与必要依据。"
