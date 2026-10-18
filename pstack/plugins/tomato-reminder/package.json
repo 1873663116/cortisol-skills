@@ -1,0 +1,12 @@
+{
+  "name": "@local/dsh-tomato-reminder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "description": "Re-injects the tomato-mode reminder at the start of each turn once the mode is on.",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-agent": "*",
+    "@deepseek-ai/dsh-llm": "*"
+  }
+}
