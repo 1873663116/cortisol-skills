@@ -1,9 +1,10 @@
 # pstack plugins for DeepSeek Harness
 
-Two things live here, both applied by `pstack-extras.patch.yml`:
+`pstack-extras.patch.yml` carries three rows:
 
-- `tomato-reminder/` — re-states the mode reminder at the start of each turn.
-- The preset rows — make `tomato-agent` and `comment-sicko` selectable delegands instead of prompts to paste.
+- `tomato-reminder` — re-states the mode reminder at the start of each turn.
+- `preset-tomato-agent` — a delegand that starts already knowing it is a pstack delegate.
+- `preset-standard-override` — the shipped standard preset plus the allowlist that lets `subagent` name a preset.
 
 ## tomato-reminder
 
@@ -56,3 +57,19 @@ import('/Users/xiongzhipeng/.agents/pstack/plugins/tomato-reminder/index.js')
 ```
 
 Then start a session, run `/tomato-mode`, and confirm the reminder appears once per turn and that the surface holds a single copy after several turns.
+
+## Model windows
+
+A model's `contextWindow` sets when DSH condenses a conversation. The trigger is `min(W × 0.8, W − maxTokens − 65536)`; the shipped `headroomTokens` is 65,536. Every route here uses `maxTokens: 32768`:
+
+| Model | contextWindow | Trigger | Share |
+|---|---|---|---|
+| DeepSeek V4.1 Flash Fast | 448000 | 349,696 | 78% |
+| DeepSeek V4.1 Flash | 448000 | 349,696 | 78% |
+| GLM 5.3 Flash | 448000 | 349,696 | 78% |
+| GPT Luna 6.0 | 448000 | 349,696 | 78% |
+| Claude Haiku 5.5 | 200000 | 101,696 | 51% |
+
+The 448,000 windows match DeepSeek's real capacity, so the same conversation keeps the same trigger point after switching routes. A window set above what the provider serves does not delay condensation; the provider rejects the request before the trigger fires.
+
+The Haiku window is 200,000 because its target trigger is about 100,000: `200000 − 32768 − 65536 = 101696`, which is below `200000 × 0.8 = 160000`. Its 51% share is lower than the others because the fixed 65,536 headroom is a larger fraction of a smaller window.
