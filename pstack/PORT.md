@@ -1,53 +1,52 @@
 # Porting pstack
 
-pstack is a Cursor plugin. This repo runs its skills under Claude Code, Codex CLI and Grok CLI, which share a skills directory but none of Cursor's runtime. Every difference between upstream and `skills/` follows one of the rules below.
+Upstream ships pstack twice. `pstack/` is the Cursor plugin. `harness/pstack/claude-code/` is a generated copy for Claude Code that already carries the adapter line in every skill that uses Cursor names, the guide, and the README. This repo ports the generated copy, so the work is a small set of path and name transforms, not a hand rewrite.
 
-The rules are the unit of maintenance. When upstream moves, `scripts/check-upstream.py` says which files changed and whether this fork had touched them; for the ones it had not, re-apply these rules to the new text and the merge is done. `UPSTREAM` pins the baseline the script compares against.
+`skills/` is a symlink target: `~/.claude/skills` points at it, so every skill here loads in Claude Code without the plugin system. `pstack/` holds what is not a skill: these notes, the upstream pin, the adapter, the guide, the agent prompts, and the plugin manifests.
 
-## Layout
+## Updating
 
-Upstream `pstack/skills/<name>` becomes `skills/<name>`, so every harness that scans a skills directory finds them. Three exceptions:
+`scripts/check-upstream.py` compares the pinned commit in `UPSTREAM` against a fetched upstream and sorts each changed file:
 
-- `tdd` is `tdd-bug-fix`. The name collided with an existing skill that covers what makes a test worth keeping; upstream's is a seven-step bug-fix workflow. Both survive.
-- `setup-pstack` is not installed. Its Cursor model configuration is not used here.
-- `autopilot-stack` is deleted. Its premise is a linear Graphite stack; this setup uses plain GitHub, and a faked substitute reads worse than an absent playbook.
-
-`pstack/` holds what is not a skill: these notes, the upstream pin, the sticky-mode hook, the uninstalled `setup-pstack`, the `agents/` prompt files, and upstream's docs. Upstream's `docs/guide/` stays as archived reference for update reconciliation; it teaches Cursor's install paths and is not local truth.
-
-## Renames
-
-| Upstream | Here | Why |
+| Bucket | Meaning | Action |
 |---|---|---|
-| `AskQuestion` | `AskUserQuestion` | Tool name |
-| `create-skill` | `writing-for-agents` | Cursor built-in; this repo's own skill covers it |
-| `deslop` | `unslop` | Shipped in an unported Cursor plugin; `unslop` covers the ground |
-| `.cursor/skills/` | `skills/` for user-level, `.claude/skills/` for project-local | Nothing reads the Cursor path |
-| `~/.cursor/projects/<slug>/agent-transcripts/<uuid>/<uuid>.jsonl` | `~/.claude/projects/<slug>/<uuid>.jsonl` | Same slug rule, one less directory level |
-| `poteto-mode` | `tomato-mode` | Local name of the routing skill |
-| `poteto-agent` | `tomato-agent` | Local name of the style subagent |
+| TAKE | Upstream changed it; the local copy matches what the transforms produce from the old baseline. | Apply the transforms and write it over. |
+| REVIEW | Upstream changed it and the local copy diverged. | Reconcile by hand, then fold any lasting difference into the transforms. |
+| NEW | A file upstream added. | Add it through the transforms. |
+| GONE | Upstream deleted a file this fork still carries. | Delete it, or record why it stays under Dropped. |
 
-## Rewrites
+The script applies the same transforms the port uses, so a TAKE file is mechanical. Run it, port the buckets, then update `UPSTREAM` to the new commit and version.
 
-**Delegation.** Use the Agent tool. Each skill defines the roles, task scope, and acceptance criteria. Read-only assignments state `Do not write or modify files`; concurrent writers use separate worktrees or file scopes.
+## Transforms
 
-**Codex hook.** Register the existing `UserPromptSubmit` script using [hooks/README.md](hooks/README.md).
+`scripts/check-upstream.py` encodes these, and they are the whole port:
 
-**Sticky mode.** Upstream marks `poteto-mode` with `mode: true` and a `reminder:` field that Cursor re-injects each turn. Neither key exists elsewhere. Locally the skill is `tomato-mode`. `pstack/hooks/tomato_mode.py` runs on `UserPromptSubmit`, sets a per-session state file when it sees `/tomato-mode` or `$tomato-mode` in the raw prompt (Claude Code submits the slash form, T3 Code rewrites the same keystroke to `$`), and re-injects `pstack/hooks/reminder.txt` on later turns. On the activation turn it also emits a line pointing at the SKILL.md path, because the harness expands the command into the skill body only when it leads the message; a mid-message mention arrives as bare text, and `disable-model-invocation` keeps the skill out of the model's listing, so the path is the model's only way in. The hook reads the field `prompt`; Anthropic's own hook documentation calls it `user_prompt` and is wrong. `disable-model-invocation` needs no translation, Claude Code honours it.
+- **Skill folders.** `poteto-mode` is `tomato-mode`; `poteto-help` is `tomato-help`. Every occurrence in prose, frontmatter, cross-links, package names, and install keys follows. `poteto-agent` is `tomato-agent`, and `agents/poteto-agent.md` is `agents/tomato-agent.md`.
+- **Guide filename.** `docs/guide/02-poteto-mode.md` is `docs/guide/02-tomato-mode.md`, and links to it follow.
+- **Link depth.** The generated tree roots links at the plugin folder, so its skills reach the guide with `../../docs/`. Here `skills/` sits one level higher than `pstack/`, so those links become `../../pstack/docs/`, `../../pstack/README.md`, and guide links to skills become `../../../skills/`.
+- **Adapter line.** The generated tree opens each skill that uses Cursor names with a line pointing at the adapter. This fork keeps the pointer and states that the adapter maps Cursor names onto Claude Code.
 
-**Capability gaps, stated rather than substituted.** `control-cli` and `control-ui` shipped in an unported Cursor plugin. Browser, Electron and web UI work routes to the `playwright` skill. Nothing here drives a CLI or TUI, so those sites say to drive it by hand rather than send the reader hunting.
+## Claude Code adapter
 
-**Subagent style.** Skills pass role-specific instructions in the Agent task. `agents/comment-sicko.md` supplies the review prompt used by `no-comments`.
+`docs/harness/claude-code.md` carries the mapping, and it is upstream's file with the poteto names changed. It covers:
 
-**Transcript-reading scripts.** `worktree-audit.sh` computes the local transcript directory (`~/.claude/projects/<slug>`, slug = absolute path with `/` and `.` replaced by `-`). `watch-pr` and `orch` run on Bun with `gh` and needed no changes; both smoke-tested.
+- **Tools.** `Task` is `Agent`, `AskQuestion` is `AskUserQuestion`, and a skill is reached by reading its `SKILL.md` because the `Skill` tool refuses most of them.
+- **Subagents.** `generalPurpose` is `general-purpose`, `readonly: true` is the `Explore` type, and `environment: "cloud"` is an `isolation: "worktree"` run. `poteto-agent` and `comment-sicko` are `pstack:poteto-agent` and `pstack:comment-sicko` as plugin agents; this repo installs the same files as plain agent prompts in `pstack/agents/`.
+- **Models.** A Cursor model slug becomes an `Agent` `model` and `effort`. Non-Claude slugs drop `model` so the delegate runs on the session model.
+- **Paths.** Cursor skill roots, plugin roots, rules, and the transcript tree map to their `~/.claude/` equivalents.
+- **Cursor-only features.** Automations, Bugbot, cloud agents, and the built-in PR tool have no counterpart. A step that needs one writes `Skipped in Claude Code: <step>. <reason>.` and continues.
 
-## Shelved
+`setup-pstack` writes model roles to `~/.claude/rules/pstack-models.md`, which Claude Code loads into every session.
 
-Graphite. Roughly twenty `gt` invocations across `shipping`, `babysit` and `autopilot-full`. Deliberately not rewritten: the active repositories here commit straight to `main` with no open PRs, so the PR-driving playbooks have nothing to drive. If a PR workflow appears, translate `gt` to `git` and `gh` then.
+## Sticky mode
 
-Roughly 45 mentions of the word "Cursor" that are prose and execute nothing. `CURSOR-SURVEY.md` has the classified inventory.
+Upstream dropped the `mode` and `reminder` frontmatter keys in 0.15.23 because Cursor ignored them, and ships no hook. This repo has no hook either: `tomato-mode` loads as an ordinary skill and answers `/tomato-mode` by name. `archive/tomato-mode-claude-code-support/hooks/` keeps the retired `UserPromptSubmit` hook that re-injected the reminder each turn, in case the mode needs to persist without an explicit invocation again.
 
-## Dropped
+## Not carried
 
-`automations/benny/`, deleted 2026-08-09. A Slack triage-and-fix automation whose install surface, triggers and I/O all live on Cursor Automations and Slack actions; the loop logic was the only portable part, and nothing here runs that workflow. Re-pullable from upstream if that changes.
+- **Automations.** `automations/benny/` runs on Cursor Automations, routine `update_state` calls, and Slack actions. Nothing here runs that workflow. The README and guide name it descriptively instead of linking to a local copy.
+- **The Cursor plugin manifests and marketplace.** `pstack/.claude-plugin/plugin.json` and `plugin.json` are kept as upstream ships them, so the port can become a plugin install later. Loading today is through the skills symlink.
 
-`playbooks/orchestrate.md`, deleted 2026-08-09. Its coordination core manages many parallel stacked PRs, and a survey of the main workspace (EnchronWorkspace, 74k LOC Swift) found a single working branch and zero open PRs, so the thing it coordinates does not exist here. Multi-day work over a large codebase routes to `figure-it-out` and `autonomous-run` instead. The bookkeeping CLI it used (`tomato-mode/scripts/orch/`) is portable and stays.
+## Local skills
+
+Eight skills in `skills/` are not pstack's: `find-skills`, `grilling`, `handoff`, `mole`, `prompt-engineering`, `subagent-dispatch`, `writing-for-agents`, `wtf`. They are outside the update loop, and `check-upstream.py` never reports them.
