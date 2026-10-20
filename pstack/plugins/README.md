@@ -4,7 +4,7 @@
 
 - `tomato-reminder` — re-states the mode reminder at the start of each turn.
 - `preset-tomato-agent` — a delegand that starts already knowing it is a pstack delegate.
-- `preset-standard-override` — the shipped standard preset plus the allowlist that lets `subagent` name a preset.
+- A patch of the shipped `preset-standard` row — its child list plus the allowlist that lets `subagent` name a preset.
 
 ## tomato-reminder
 
@@ -26,7 +26,9 @@ Detection reads the user messages the loop already claimed for the turn, so the 
 
 ## Presets
 
-`standard` is re-declared with `allowedAgentPresets: [standard, tomato-agent]`. That allowlist is what turns `agent_preset` into a model-visible enum on the `subagent` tool; without it the tool refuses a preset choice. `tomato-agent` carries the same rows as `standard` and differs only in its persona, so a child starts knowing it is a pstack delegate.
+`standard` is patched by row id, not inserted as a second preset. The registry rejects a duplicate preset id, so an inserted copy of `standard` fails to activate and leaves the shipped row unchanged. The patch replaces the row's child list, which is why the whole list appears here; a DSH upgrade that changes that list does not merge into it.
+
+The patch adds `allowedAgentPresets: [standard, tomato-agent]`. That allowlist is what turns `agent_preset` into a model-visible enum on the `subagent` tool; without it the tool refuses a preset choice. `tomato-agent` carries the same rows as `standard` and differs only in its persona, so a child starts knowing it is a pstack delegate.
 
 `comment-sicko` has no preset yet. A skill that wants it inlines `../../agents/comment-sicko.md` into the brief until it does.
 
