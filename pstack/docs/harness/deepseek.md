@@ -35,11 +35,13 @@ A skill marked `disable-model-invocation: true` is absent from the catalog and r
 
 ## Models
 
-`~/.claude/rules/` has no DSH equivalent, and DSH loads no rules directory. Role lines therefore live in `~/.agents/pstack-models.md`, which nothing loads automatically. Read it when a skill names a role, or keep the role values in the current conversation.
+`~/.claude/rules/` and `~/.cursor/rules/` have no DSH equivalent, and DSH loads no rules directory. DSH loads one user-global instruction file, `~/.agents/AGENTS.md`, into every session. Role lines therefore live there, inside `<!-- pstack-models:start -->` and `<!-- pstack-models:end -->`, so the rest of that file keeps its contents.
 
-A role value is `<model> <effort>`, for example `deepseek/deepseek-v4.1-flash-fast high`. Pass the model as `provider` and `model` together, and the effort as `reasoning_effort`. Omit all three to inherit the parent route. Confirm what the session offers with `list_subagent_models` when it is visible, or read the configured providers in the profile.
+A role value is `provider / model`, for example `command-code / deepseek/deepseek-v4.1-flash`, optionally followed by an effort. Pass the provider and model as `provider` and `model` together, and the effort as `reasoning_effort`. Omit all three to inherit the parent route. `list_subagent_models` reports the routes this session accepts, and it is the only dependable source.
 
-`setup-pstack` writes the role file. Its detection step enumerates what the `subagent` tool accepts rather than guessing.
+Two routes carry the skill defaults. `command-code / deepseek/deepseek-v4.1-flash` is the fast code route, and `command-code / gpt-6-luna` is the judgment route. Only the `deepseek*` routes declare efforts, on the ladder `max`, `high`, `low`. Every other route ignores `reasoning_effort`.
+
+`setup-pstack` writes that region. Its detection step calls `list_subagent_models` rather than guessing.
 
 ## Transcripts
 

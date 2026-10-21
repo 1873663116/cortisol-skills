@@ -121,7 +121,7 @@ FIELD_RULES = [
     ),
     (
         "`run_in_background: true`",
-        "a `subagent` call, which returns at once and notifies you when it finishes",
+        "a call that returns at once and notifies you when it finishes",
     ),
     (
         "`resume`",
@@ -153,9 +153,9 @@ PATH_RULES = [
     (r"~/\.cursor/projects/", "~/.dsh/sessions/"),
     (r"\.cursor/projects/", "~/.dsh/sessions/"),
     # Model rule, which DSH has no rules directory for.
-    (r"~/.cursor/rules/pstack-models\.mdc", "~/.agents/pstack-models.md"),
-    (r"`pstack-models\.mdc`", "`pstack-models.md`"),
-    (r"pstack-models\.mdc", "pstack-models.md"),
+    (r"~/.cursor/rules/pstack-models\.mdc", "~/.agents/AGENTS.md"),
+    (r"`pstack-models\.mdc`", "`AGENTS.md`"),
+    (r"pstack-models\.mdc", "AGENTS.md"),
     # Skill and plugin roots.
     (r"~/.cursor/skills/", "~/.dsh/skills/"),
     (r"\.cursor/skills/", "~/.dsh/skills/"),
@@ -199,6 +199,30 @@ sessions="$HOME/.dsh/sessions/$slug"
 			last=$(date -r "$last_ts" '+%Y-%m-%d' 2>/dev/null); fi
 	fi
 """,
+    ),
+    (
+        "Write `~/.cursor/rules/pstack-models.mdc`, an always-applied rule that sets pstack's model per role.",
+        "Write pstack's model roles into `~/.agents/AGENTS.md`, the user-global instruction file this harness loads into every session. Replace only the delimited pstack region and leave the rest of that file alone.",
+    ),
+    (
+        'The default role-to-model mapping is the rule shape shown in step 5 below. If `~/.cursor/rules/pstack-models.mdc` already exists, read it and treat its `# budget` line and its role values as the current choices.',
+        'The default role-to-model mapping is the shape shown in step 5 below. If `~/.agents/AGENTS.md` already holds a pstack region, read it and treat its `# budget` line and its role values as the current choices.',
+    ),
+    (
+        "Enumerate the model slugs you can pass to a `Task` subagent in this session. That is the dependable source. If Cursor also exposes a models API or CLI that lists the user's entitled models, prefer it for completeness. If you cannot detect any, ask the user to paste the slugs they have access to. Never write a real slug you have not confirmed is available. The aliases `inherit-parent` and `auto` are always valid even though they are not detected slugs.",
+        'Call `list_subagent_models`. It reports the exact provider and model routes this session may name, which is the only dependable source. If the tool is absent, model selection is off for this composition, so say so and leave the role table on its defaults. Never write a route you have not confirmed. The aliases `inherit-parent` and `auto` are always valid even though they are not routes.',
+    ),
+    (
+        "**(a) Ask for a budget.** Prefer AskQuestion over free text. Offer these four options with these exact labels, and name the current budget when the rule records one. With no rule, say that `large` matches the skill defaults.\n\n- `unlimited — max reasoning`\n- `large — xhigh reasoning`\n- `medium — high reasoning`\n- `small — medium reasoning`\n\n**(b) Apply it.** Build the working table from the skill defaults, and on a re-run keep any role you changed by family, list, or alias (`inherit-parent`, `auto`). `unlimited`, `large`, `medium`, and `small` set the effort token of every real slug, panel entries included, to `max`, `xhigh`, `high`, or `medium`. The effort token is the last token, or the one before a trailing `fast`, on the ladder `max` > `xhigh` > `high` > `medium` > `low`. If the result is not a detected slug, use the same family's detected slug with the highest effort at or below the target, else mark the role as needing a choice. `inherit-parent` and `auto` do not change. So `unlimited` turns `claude-opus-5-5-xhigh` into `claude-opus-5-5-max`. Grok slugs top out at `xhigh`, so under `unlimited` the fallback puts Grok at `xhigh` and keeps `grok-4.7-xhigh-fast` as it is. `large` keeps both defaults. `small` turns them into `claude-opus-5-5-medium` and `grok-4.7-medium-fast`.\n",
+        "**(a) Ask for a budget.** Prefer AskQuestion over free text. Offer these three options with these exact labels, and name the current budget when the region records one. With no region, say that `large` matches the skill defaults.\n\n- `unlimited: max reasoning`\n- `large: high reasoning`\n- `small: low reasoning`\n\n**(b) Apply it.** The budget sets `reasoning_effort`, and only on routes that declare efforts. In this deployment the `deepseek*` routes declare `max`, `high`, and `low`; every other route ignores the setting. Build the working table from the skill defaults, and on a re-run keep any role you changed by route (`inherit-parent`, `auto` included). `unlimited` sets every role to `max`, `large` to `high`, `small` to `low`. Keep each role's route, so a diverse panel stays diverse. `inherit-parent` and `auto` do not change.\n\n",
+    ),
+    (
+        'Every real slug written must be in the detected set. `inherit-parent` and `auto` always pass. If a chosen real slug is not available, stop and ask again.',
+        'Every route written must appear in what `list_subagent_models` returned. `inherit-parent` and `auto` always pass. If a chosen route is not available, stop and ask again.',
+    ),
+    (
+        'Write `~/.cursor/rules/pstack-models.mdc` with `alwaysApply: true`, a `# budget` line with the chosen label and its target effort, and one line per role, using the same labels tomato-mode uses. Overwrite the whole file so re-runs stay idempotent. Shape:\n\n```\n---\ndescription: pstack per-role model choices (overrides skill defaults)\nalwaysApply: true\n---\n# pstack model configuration. One line per role. Delete a line to fall back to the skill default.\n# `inherit-parent` or `auto` as a value: the role runs on the parent chat model (omit Task `model`). Alias entries in a panel list still count toward its fan-out.\n# budget: large (xhigh)\nfeature, refactoring: grok-4.7-xhigh-fast\nbug-fix: grok-4.7-xhigh-fast\nperf-issue: grok-4.7-xhigh-fast\nhillclimb: grok-4.7-xhigh-fast\njudgment and prose: claude-opus-5-5-xhigh\nhardest tasks: claude-opus-5-5-xhigh\nhow explorer: grok-4.7-xhigh-fast\nhow explainer: claude-opus-5-5-xhigh\nwhy investigators: grok-4.7-xhigh-fast\nwhy synthesizer: claude-opus-5-5-xhigh\nreflect tooling: grok-4.7-xhigh-fast\nreflect judgment, divergent, synthesizer: claude-opus-5-5-xhigh\narena runners: claude-opus-5-5-xhigh, grok-4.7-xhigh-fast\narena cross-judge pool: claude-opus-5-5-xhigh, grok-4.7-xhigh-fast\nswarm workers: grok-4.7-xhigh-fast\narchitect runners: claude-opus-5-5-xhigh, grok-4.7-xhigh-fast\ninterrogate reviewers: claude-opus-5-5-xhigh, grok-4.7-xhigh-fast\n```\n\n### 6. Confirm\n\nTell the user the rule was written and that it applies to new sessions. Re-running this skill updates it.\n\n### 7. Offer a verification skill (optional)\n\nCheck whether the project has a way to drive the real app for proof (a `verify-*` skill, or an existing harness). If not, offer once: "want a project-local verification skill, so agents can drive the app the way a user does and prove changes work? I can generate one with /create-verification-skill." On yes, invoke `/create-verification-skill` (resolves wherever pstack is installed: workspace, user, or plugin). On no, move on without pushing.\n\n### 8. Offer a formal verification skill (optional)\n\nCheck whether the project already has a formal verification skill (a project skill that runs a model checker, a proof, or another verifier against the code). If not, offer once: "want a formal verification skill, so agents can prove a key property of your code holds in every case in scope, not only the cases tests reach? I can generate one with /create-formal-verification-skill." On yes, invoke `/create-formal-verification-skill` (resolves wherever pstack is installed: workspace, user, or plugin). On no, move on without pushing.\n',
+        'Write the region into `~/.agents/AGENTS.md` between `<!-- pstack-models:start -->` and `<!-- pstack-models:end -->`. Replace only that region so the rest of the file survives, and append it when missing. Shape:\n\n```\n<!-- pstack-models:start -->\n# pstack model configuration. One line per role. Delete a line to fall back to the skill default.\n# A value is a provider and model as `list_subagent_models` reports them, written `provider / model`. `inherit-parent` or `auto` runs the role on the parent model.\n# budget: large (high)\nfeature, refactoring: command-code / deepseek/deepseek-v4.1-flash\nbug-fix: command-code / deepseek/deepseek-v4.1-flash\nperf-issue: command-code / deepseek/deepseek-v4.1-flash\nhillclimb: command-code / deepseek/deepseek-v4.1-flash\njudgment and prose: command-code / gpt-6-luna\nhardest tasks: command-code / gpt-6-luna\nhow explorer: command-code / deepseek/deepseek-v4.1-flash\nhow explainer: command-code / gpt-6-luna\nwhy investigators: command-code / deepseek/deepseek-v4.1-flash\nwhy synthesizer: command-code / gpt-6-luna\nreflect tooling: command-code / deepseek/deepseek-v4.1-flash\nreflect judgment, divergent, synthesizer: command-code / gpt-6-luna\narena runners: command-code / gpt-6-luna, command-code / deepseek/deepseek-v4.1-flash\narena cross-judge pool: command-code / gpt-6-luna, command-code / deepseek/deepseek-v4.1-flash\nswarm workers: command-code / deepseek/deepseek-v4.1-flash\narchitect runners: command-code / gpt-6-luna, command-code / deepseek/deepseek-v4.1-flash\ninterrogate reviewers: command-code / gpt-6-luna, command-code / deepseek/deepseek-v4.1-flash\n<!-- pstack-models:end -->\n```\n\n### 6. Confirm',
     ),
 ]
 
@@ -248,6 +272,75 @@ def rewrite_span(match):
     return "`" + SPAN.get(inner, inner) + "`"
 
 
+# Cursor model slugs this deployment cannot route. Two families carry every
+# default in the tree: the fast code family and the judgment family. Each maps
+# onto one configured route, so a skill that names a default still names a route
+# `subagent` accepts. Applied last: nothing downstream reads a slug.
+MODEL_RULES = [
+    (r"claude-opus-5-5-(?:xhigh|max|medium|low)(?:-fast)?", "gpt-6-luna"),
+    (r"claude-opus-5-5", "gpt-6-luna"),
+    (r"grok-4\.7-(?:xhigh|max|medium|low)(?:-fast)?", "deepseek/deepseek-v4.1-flash"),
+    (r"grok-4\.7", "deepseek/deepseek-v4.1-flash"),
+    (r"`gpt-6-luna`", "`command-code / gpt-6-luna`"),
+    (r"`deepseek/deepseek-v4\.1-flash`", "`command-code / deepseek/deepseek-v4.1-flash`"),
+]
+
+# Prose that names a Cursor field or a Cursor model family without a backtick
+# span or a slug the rules above reach either.
+TEXT_RULES = [
+    (
+        "set their own `subagent_type` for diverse-model review",
+        "pick their own `provider` and `model` for diverse-model review",
+    ),
+    (
+        "agent mode (readonly strips MCP)",
+        "no file writes unless the brief says otherwise",
+    ),
+    (
+        "Families go by prefix: `claude-*`, and `grok-*` with `cursor-grok-*` and `composer-*`.",
+        "Families go by route: the judgment route and the code route.",
+    ),    (
+        "**Do not use readonly/Ask mode.** It strips MCP access, which disables the MCP-backed investigators and the synthesizer's citation spot-checks.",
+        "**Do not ask for a reduced tool set.** The MCP-backed investigators and the synthesizer's citation spot-checks need it.",
+    ),
+    (
+        "and readonly strips MCPs.",
+        "and a reduced tool set would strip them.",
+    ),
+    (
+        " (agent mode)",
+        "",
+    ),
+    (
+        ", agent mode (the full tool set, MCP servers included)",
+        ", the full tool set, MCP servers included",
+    ),
+    (
+        "Spawn one readonly judge subagent on that model.",
+        "Spawn one judge subagent on that route that writes no files.",
+    ),
+    (
+        "`/setup-pstack` budget sets each role's starting level, xhigh by default. Raise it one step, up to max, for the hardest or subtlest work. Lower it one step for judgment and two or more steps for routine work.",
+        "`/setup-pstack` budget sets each role's starting level, `high` by default. Use `max` for the hardest or subtlest work and `low` for routine work.",
+    ),
+    (
+        "Otherwise use standard speed, the same slug without `-fast`.",
+        "Otherwise use the route as written.",
+    ),
+    (
+        "Change only the effort level and whether the slug is fast, and keep the family the role names, so a diverse panel stays diverse. If the family has no slug at that level and speed, use its nearest slug.",
+        "Change only the effort level, and keep the route the role names, so a diverse panel stays diverse. If a route declares no effort, leave it unset.",
+    ),
+    (
+        "If the `subagent` tool rejects the adjusted slug, do not try another adjusted slug.",
+        "If the `subagent` tool rejects an adjusted route, do not try another one.",
+    ),    (
+        "marking any real slug not in the detected set as needing a choice",
+        "marking any route not in the detected set as needing a choice",
+    ),
+]
+
+
 def transform(text):
     text = text.replace(ADAPTER_FROM, ADAPTER_TO)
     for before, after in BLOCK_RULES:
@@ -268,6 +361,10 @@ def transform(text):
     for pattern, replacement in BARE:
         text = re.sub(pattern, replacement, text)
     for pattern, replacement in PATH_RULES:
+        text = re.sub(pattern, replacement, text)
+    for before, after in TEXT_RULES:
+        text = text.replace(before, after)
+    for pattern, replacement in MODEL_RULES:
         text = re.sub(pattern, replacement, text)
     return text
 

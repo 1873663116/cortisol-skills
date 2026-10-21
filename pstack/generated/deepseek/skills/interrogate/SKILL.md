@@ -26,16 +26,16 @@ Before spawning reviewers, state the intent in one clear paragraph from the user
 
 ## Step 3, Spawn Reviewers
 
-Launch all reviewers in a single message with the `subagent` tool, one per entry on the `interrogate reviewers` line in `~/.agents/pstack-models.md`, labeled Reviewer A, B, and so on to match the entry count. If the rule or that line is missing, use the table defaults.
+Launch all reviewers in a single message with the `subagent` tool, one per entry on the `interrogate reviewers` line in `~/.agents/AGENTS.md`, labeled Reviewer A, B, and so on to match the entry count. If the rule or that line is missing, use the table defaults.
 
 | Subagent | Default model |
 |----------|---------------|
-| Reviewer A | `claude-opus-5-5-xhigh` |
-| Reviewer B | `grok-4.7-xhigh-fast` |
+| Reviewer A | `command-code / gpt-6-luna` |
+| Reviewer B | `command-code / deepseek/deepseek-v4.1-flash` |
 
 Each reviewer gets one `subagent` call, no file writes, and `model` set to its configured entry, or its table default when there is no configured line. Omit `model` for an `auto` or `inherit-parent` entry, so that reviewer runs on the parent model.
 
-If the `subagent` tool rejects a configured entry, run that reviewer on its family's table default and say so. Families go by prefix: `claude-*`, and `grok-*` with `cursor-grok-*` and `composer-*`. A refused `composer-*` entry runs on Reviewer B's default. With no family match, use Reviewer A's default. If it rejects a table default, spawn with the closest equivalent from the valid slugs in its error message (prefer the same family and reasoning tier), and open a separate PR to update the default table. Do not block the review on the slug issue. Never treat an alias entry as a rejected slug or apply either fallback to it.
+If the `subagent` tool rejects a configured entry, run that reviewer on its family's table default and say so. Families go by route: the judgment route and the code route. A refused `composer-*` entry runs on Reviewer B's default. With no family match, use Reviewer A's default. If it rejects a table default, spawn with the closest equivalent from the valid slugs in its error message (prefer the same family and reasoning tier), and open a separate PR to update the default table. Do not block the review on the slug issue. Never treat an alias entry as a rejected slug or apply either fallback to it.
 
 Read `references/reviewer-prompt.md` and fill in the same template for every reviewer with the stated intent, the diff or file contents, the rubric from `references/rubric.md`, and the code-quality lens from `references/code-quality-review.md`. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **tomato-mode** skill.
 
